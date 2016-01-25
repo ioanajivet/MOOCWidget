@@ -51,6 +51,8 @@ public class GraphGeneration {
 
             output.write(toWrite);
             output.close();
+
+            generateChartPNG(filename);
         }
 
         System.out.println("Generated .js files.");
