@@ -99,9 +99,9 @@ public class GraphGeneration {
     private static String getValuesString(String []line){
         String values = "[";
 
-        for (int i = 0; i < 5; i++)
+        for (int i = 1; i < 6; i++)
             values += line[i] + ",";
-        values += line[5] + "]";
+        values += line[6] + "]";
 
         return values;
 
@@ -110,7 +110,7 @@ public class GraphGeneration {
     private static String getThresholdsString(String []line) {
         String threshold = "[";
 
-        for (int i=0; i<5; i++)
+        for (int i=1; i<6; i++)
             threshold += line[i] + ",";
         threshold += line[5] + "]";
 
