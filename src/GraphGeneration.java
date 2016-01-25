@@ -44,8 +44,7 @@ public class GraphGeneration {
 
         while ((nextLine = csvReader.readNext()) != null) {
             filename = nextLine[0].substring(nextLine[0].indexOf("3T"));
-            output = new FileWriter(outputPath + "js\\" + filename + ".js");
-            System.out.println(output);
+            output = new FileWriter(outputPath + filename + ".js");
 
             values = getValuesString(nextLine);
             toWrite = getAreaChartOptionsAsString(thresholds, values);
@@ -54,6 +53,7 @@ public class GraphGeneration {
             output.close();
         }
 
+        System.out.println("Generated .js files.");
         csvReader.close();
 
     }
@@ -70,10 +70,13 @@ public class GraphGeneration {
     private static void generateChartPNG(String user) throws IOException{
         String phantom;
 
-        phantom = "phantomjs highcharts-convert.js -infile 2015\\js\\" + user + ".js -outfile 2015\\out\\" + user + ".png -scale 2.5 -width 600";
+        phantom = "phantomjs highcharts-convert.js -infile 2015/js/" + user + ".js -outfile 2015/out/" + user + ".png -scale 2.5 -width 600";
 
-        ProcessBuilder builder = new ProcessBuilder(
-                "cmd.exe", "/c", "cd \"C:\\Users\\Ioana\\Desktop\\Thesis\\Widget\\generate\" && " + phantom);
+        //ProcessBuilder builder = new ProcessBuilder(
+          //      "cmd.exe", "/c", "cd \"C:\\Users\\Ioana\\Desktop\\Thesis\\Widget\\generate\" && " + phantom);
+
+        String[] args = new String[] {"/bin/bash", "-c", phantom};
+        ProcessBuilder builder = new ProcessBuilder(args);
 
         builder.redirectErrorStream(true);
         Process p = builder.start();
