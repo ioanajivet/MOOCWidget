@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 //TODO: check consistency of week numbering: starting with 0 or with 1
 public class MetricComputation {
 
-    static HashMap<String, UserForDataProcessing> graduates;
+    static HashMap<String, UserForMetricsComputation> graduates;
     static HashMap<Integer, ArrayList<String>> videosPerWeek;
     static HashMap<String, Integer> problemsWeek;
     static HashMap<Integer, ArrayList<String>> problemsPerWeek;
@@ -37,63 +37,10 @@ public class MetricComputation {
             initialize();
             generateMetrics();
 
-            //read thresholds - per week and cutOffPercentage
-           // readThresholds(1);
-            //scaleThresholds();
-
-
-
             //todo: write metrics for all weeks
             //write metrics only for week 1
             for(int i = 1; i < 12; i++)
               writeMetrics("data\\2015\\user_metrics\\metrics" + i + ".csv", i);
-
-            //write .js files that is used to generate the charts - per week
-
-            //-------------- Distinct Videos Watched ---------
-            //-----Graduates only
-            /*readUsers(0.6);
-            readVideosPublished();
-            computeDistinctVideos();
-            writeDistinctVideos("weeklyDistinctVideos.csv");*/
-
-            //-----All users
-            /*readUsers(0);
-            readVideosPublished();
-            computeDistinctVideos();
-            writeDistinctVideos("weeklyDistinctVideosAll.csv");*/
-
-            //------------------- Times --------------------
-            //Compute Times spent on the platform, watching video and their ratio
-            //readUsers(0.6);
-            //computeWeeklyVideoTimes();
-            //computeWeeklyPlatformTimes();
-            //writeVideoTimes();
-            //writePlatformTime("weeklyPlatformTime.csv");
-            //writePlatformTime("weeklyPlatformTimeAll.csv");
-            //writeAllData("weeklyData.csv");
-
-            //------------------- Assignments and proactivity vs. procrastination --------------------
-            //Time between the problem was submitted and the deadline
-            //-----Graduates only
-            /*readProblems();
-            readUsers(0.6);
-            readSubmissions();
-            writeAssignments("untilDeadline.csv");*/
-
-            //-----All users
-           /* readProblems();
-            readUsers(0.0);
-            readSubmissions();
-            writeAssignments("untilDeadlineAll.csv");*/
-
-
-            //------Plot only one problem-------
-            /*problemXSubmissions = new ArrayList<>();
-            Iterator<String> it = problemsWeek.keySet().iterator();
-            String plottedProblem = it.next();
-            System.out.println("Plotted problem: " + plottedProblem);
-            plotOneProblem(plottedProblem);*/
 
 
         }
@@ -132,19 +79,19 @@ public class MetricComputation {
     }
 
     private static void computeUntilDeadline() {
-        for (Map.Entry<String, UserForDataProcessing> entry : graduates.entrySet())
+        for (Map.Entry<String, UserForMetricsComputation> entry : graduates.entrySet())
             entry.getValue().computeUntilDeadlines();
     }
 
     private static void computeWeeklyRatioTimes() {
-        for (Map.Entry<String, UserForDataProcessing> entry : graduates.entrySet())
+        for (Map.Entry<String, UserForMetricsComputation> entry : graduates.entrySet())
             entry.getValue().computeRatioTimes();
     }
 
     private static void cumulateMetrics() {
-        UserForDataProcessing current;
+        UserForMetricsComputation current;
 
-        for (Map.Entry<String, UserForDataProcessing> entry : graduates.entrySet()) {
+        for (Map.Entry<String, UserForMetricsComputation> entry : graduates.entrySet()) {
             current = entry.getValue();
 
             current.cumulatePlatformTimes();
@@ -161,14 +108,13 @@ public class MetricComputation {
     private static void writeMetrics(String filename, int week) throws IOException {
         CSVWriter output = new CSVWriter(new FileWriter(filename), ',');
         String[] toWrite;
-        UserForDataProcessing current;
-        double ratio;
+        UserForMetricsComputation current;
 
         toWrite = "User_id#Time on platform#Time on videos#Ratio video/platform#Distict videos#Assignments#Until deadline".split("#");
 
         output.writeNext(toWrite);
 
-        for (Map.Entry<String, UserForDataProcessing> entry : graduates.entrySet()) {
+        for (Map.Entry<String, UserForMetricsComputation> entry : graduates.entrySet()) {
             current = entry.getValue();
             toWrite[0] = entry.getKey();
 
@@ -184,177 +130,6 @@ public class MetricComputation {
         output.close();
     }
 
-    private static int minWeekTime(int week){
-        return graduates.values().stream()
-                .mapToInt(e -> e.getWeekTime(week))
-                .min()
-                .getAsInt();
-    }
-
-    private static int maxWeekTime(int week){
-        return  graduates.values().stream()
-                .mapToInt(e -> e.getWeekTime(week))
-                .max()
-                .getAsInt();
-    }
-
-    private static int maxVideoWeekTime(int week) {
-        return  graduates.values().stream()
-                .mapToInt(e -> e.getWeekVideoTime(week))
-                .max()
-                .getAsInt();
-    }
-
-    private static double maxRatioVideoPlatform(int week){
-        return  graduates.values().stream()
-                .mapToDouble(e -> e.getRatio(week))
-                .max()
-                .getAsDouble();
-    }
-
-    private static int maxDistinctVideos(int week){
-        return  graduates.values().stream()
-                .mapToInt(e -> e.getDistinctVideosPerWeek(week))
-                .max()
-                .getAsInt();
-    }
-
-    private static int maxAssignments(int week){
-        return  graduates.values().stream()
-                .mapToInt(e -> e.getAssignmentsSubmittedPerWeek(week))
-                .max()
-                .getAsInt();
-    }
-
-    private static long maxUntilDeadline(int week){
-        return  graduates.values().stream()
-                .mapToLong(e -> e.getUntilDeadlinesPerWeekAverage(week))
-                .max()
-                .getAsLong();
-    }
-
-    private static void scaleMetrics(){
-        scaleWeekTime(1);
-        scaleVideoTime(1);
-        scaleRatioTime(1);
-        scaleVideos(1);
-        scaleAssignments(1);
-        scaleUntilDeadline(1);
-    }
-
-    private static void scaleWeekTime(int week){
-        int max = maxWeekTime(week);
-        int weekTime;
-        UserForDataProcessing current;
-
-        for (Map.Entry<String, UserForDataProcessing> entry : graduates.entrySet()) {
-            current = entry.getValue();
-            weekTime = current.getWeekTime(week);
-            scaledWeeklyTimes.put(entry.getKey(), (int) Math.ceil(weekTime*10.0/max));
-        }
-    }
-
-    private static void scaleVideoTime(int week){
-        int max = maxVideoWeekTime(week);
-        int videoTime;
-        UserForDataProcessing current;
-
-        for (Map.Entry<String, UserForDataProcessing> entry : graduates.entrySet()) {
-            current = entry.getValue();
-            videoTime = current.getWeekVideoTime(week);
-            scaledVideoTimes.put(entry.getKey(), (int) Math.ceil(videoTime*10.0/max));
-        }
-    }
-
-    private static void scaleRatioTime(int week){
-        double max = maxRatioVideoPlatform(week);
-        double ratio;
-        UserForDataProcessing current;
-
-        for (Map.Entry<String, UserForDataProcessing> entry : graduates.entrySet()) {
-            current = entry.getValue();
-            ratio = current.getRatio(week);
-            scaledRatio.put(entry.getKey(), (int) Math.ceil(ratio*10.0/max));
-        }
-    }
-
-    private static void scaleVideos(int week){
-        int max = maxDistinctVideos(week);
-        int videos;
-        UserForDataProcessing current;
-
-        for (Map.Entry<String, UserForDataProcessing> entry : graduates.entrySet()) {
-            current = entry.getValue();
-            videos = current.getDistinctVideosPerWeek(week);
-            scaledVideos.put(entry.getKey(), (int) Math.ceil(videos*10.0/max));
-        }
-    }
-
-    private static void scaleAssignments(int week){
-        int max = maxAssignments(week);
-        int assignments;
-        UserForDataProcessing current;
-
-        for (Map.Entry<String, UserForDataProcessing> entry : graduates.entrySet()) {
-            current = entry.getValue();
-            assignments = current.getAssignmentsSubmittedPerWeek(week);
-            scaledAssignments.put(entry.getKey(), (int) Math.ceil(assignments*10.0/max));
-        }
-    }
-
-    private static void scaleUntilDeadline(int week){
-        long max = maxUntilDeadline(week);
-        long untilDeadline;
-        UserForDataProcessing current;
-
-        for (Map.Entry<String, UserForDataProcessing> entry : graduates.entrySet()) {
-            current = entry.getValue();
-            untilDeadline = current.getUntilDeadlinesPerWeekAverage(week);
-            scaledDeadlines.put(entry.getKey(), (int) Math.ceil(untilDeadline*10.0/max));
-        }
-    }
-
-    private static void readThresholds(int week) throws IOException {
-        CSVReader csvReader = new CSVReader(new FileReader("thresholds10.csv"));
-        String [] nextLine;
-        int i = 0;
-        csvReader.readNext();
-
-        while ((nextLine = csvReader.readNext()) != null) {
-            thresholds[i++] = Double.parseDouble(nextLine[week]);
-        }
-
-        csvReader.close();
-    }
-
-    private static void scaleThresholds(){
-        int maxWeekTime = maxWeekTime(1);
-        int maxVideoTime = maxVideoWeekTime(1);
-        double maxRatio = maxRatioVideoPlatform(1);
-        int maxVideos = maxDistinctVideos(1);
-        int maxAssignment = maxAssignments(1);
-        long maxUntilDeadline = maxUntilDeadline(1);
-
-        thresholds[0] = Math.round(thresholds[0]*10/maxWeekTime);
-        thresholds[1] = Math.round(thresholds[1]*10/maxVideoTime);
-        thresholds[2] = Math.round(thresholds[2]*10/maxRatio);
-        thresholds[3] = Math.round(thresholds[3]*10/maxVideos);
-
-        if(maxAssignment == 0)
-            thresholds[4] = 0;
-        else
-            thresholds[4] = Math.round(thresholds[4]*10/maxAssignment);
-
-        if(maxUntilDeadline == 0)
-            thresholds[5] = 0;
-        else
-            thresholds[5] = Math.round(thresholds[5]*10/maxUntilDeadline);
-
-        for(int i=0;i<6;i++)
-            System.out.println(i + ": " + thresholds[i]);
-    }
-
-
     //************************
     //************ Loading data
     private static void readUsers(double threshold) throws IOException {
@@ -365,7 +140,7 @@ public class MetricComputation {
 
         while ((nextLine = csvReader.readNext()) != null) {
             if(Double.parseDouble(nextLine[1]) >= threshold)
-                graduates.put(nextLine[0], new UserForDataProcessing(nextLine[0],nextLine[1]));
+                graduates.put(nextLine[0], new UserForMetricsComputation(nextLine[0],nextLine[1]));
         }
 
         csvReader.close();
@@ -399,7 +174,7 @@ public class MetricComputation {
     private static void readSubmissions() throws IOException,ParseException {
         CSVReader csvReader = new CSVReader(new FileReader("data\\2015\\submissions.csv"));
         String [] nextLine;
-        UserForDataProcessing user;
+        UserForMetricsComputation user;
         int week;
         long hours;
         String submissionTime;

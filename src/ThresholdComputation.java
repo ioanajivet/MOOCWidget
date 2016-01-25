@@ -241,8 +241,6 @@ public class ThresholdComputation {
             sum = getSum(weekValues, cutOffMin, cutOffMax);
 
             averages.put(i, sum / count);
-
-            System.out.println("week " + i + ": " + sum + " - " + count + " - " + sum/count);
         }
 
         return averages;
@@ -339,6 +337,7 @@ public class ThresholdComputation {
                 .filter(e -> e <= max)
                 .count();
     }
+
     //************************
     //************ Utils
     private static double getSum(ArrayList<Integer> values, int cutOffMin, int cutOffMax) {
@@ -354,10 +353,5 @@ public class ThresholdComputation {
                 .mapToDouble(e -> e)
                 .reduce(0, Double::sum);
     }
-
-    private static long toHours(int seconds) {
-        return Math.round(seconds / 3600.0);
-    }
-
 
 }

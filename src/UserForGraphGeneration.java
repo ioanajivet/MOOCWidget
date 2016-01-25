@@ -3,8 +3,10 @@ import java.util.HashMap;
 /**
  * Created by Ioana on 1/16/2016.
  */
-public class User {
+public class UserForGraphGeneration {
     private String id;
+    private String anonymousId;
+
     private HashMap<Integer, Integer> weeklyPlatformTimes;
     private HashMap<Integer, Integer> weeklyVideoTimes;
     private HashMap<Integer, Double> weeklyRatioTimes;
@@ -12,7 +14,7 @@ public class User {
     private HashMap<Integer, Integer> weeklyAssignments;
     private HashMap<Integer, Integer> weeklyUntilDeadline;
 
-    public User(String id){
+    public UserForGraphGeneration(String id) {
         this.id = id;
         weeklyPlatformTimes = new HashMap<>();
         weeklyVideoTimes = new HashMap<>();
@@ -20,6 +22,10 @@ public class User {
         weeklyDistinctVideos = new HashMap<>();
         weeklyAssignments = new HashMap<>();
         weeklyUntilDeadline = new HashMap<>();
+    }
+
+    public void setAnonymousId(String anon){
+        this.anonymousId = anon;
     }
 
     public void setPlatformTime(int week, int time){
@@ -44,6 +50,14 @@ public class User {
 
     public void setUntilDeadline(int week, int hours){
         weeklyUntilDeadline.put(week, hours);
+    }
+
+    public String getId(){
+        return this.id;
+    }
+
+    public String getAnonymousId(){
+        return this.anonymousId;
     }
 
     public int getPlatformTime(int week){

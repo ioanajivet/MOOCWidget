@@ -5,7 +5,7 @@ import java.util.Map;
 /**
  * Created by Ioana on 1/9/2016.
  */
-public class UserForDataProcessing {
+public class UserForMetricsComputation {
     private String id;
     private String anonymousId;
     private float grade;
@@ -30,7 +30,7 @@ public class UserForDataProcessing {
     private ArrayList<String> submittedAssignments;
     private int []untilDeadlinePerWeek;
 
-    public UserForDataProcessing(String id, String grade){
+    public UserForMetricsComputation(String id, String grade){
         this.id =  id;
         this.grade = Float.parseFloat(grade);
         timePerWeek = new int[11];
@@ -102,7 +102,7 @@ public class UserForDataProcessing {
         videoTimePerWeek[i-1] = value;
     }
 
-    //todo: refactor: move as static to DataProcessing.java
+    //todo: refactor: move as static to GraphGeneration.java
 
 
     public void addVideo(String videoID, int week) {
@@ -144,7 +144,7 @@ public class UserForDataProcessing {
     }
 
     //todo: calculate mean/average - find best way to measure "time until deadline"
-    //todo: put this in an array for easy access and compute by calling once from DataProcessing.java
+    //todo: put this in an array for easy access and compute by calling once from GraphGeneration.java
 
     public void computeUntilDeadlines(){
         for (int i = 1; i < 12; i++)
