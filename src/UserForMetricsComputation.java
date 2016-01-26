@@ -30,6 +30,29 @@ public class UserForMetricsComputation {
     private ArrayList<String> submittedAssignments;
     private int []untilDeadlinePerWeek;
 
+    public UserForMetricsComputation(String id) {
+        this.id =  id;
+
+        timePerWeek = new int[11];
+        totalTime = 0;
+        sessions = 0;
+
+        videoTimePerWeek = new int[11];
+        videoTime = 0;
+
+        ratioTimes = new double[11];
+
+        videosWatched = new HashMap<>();
+        videosPerWeek = new int[11];
+
+        //assignmentSubmissions = new HashMap<>();
+        submittedAssignments = new ArrayList<>();
+        assignmentUntilDeadlineInHours = new HashMap<>();
+
+        assignmentsPerWeek = new int[11];
+        untilDeadlinePerWeek = new int[11];
+    }
+
     public UserForMetricsComputation(String id, String grade){
         this.id =  id;
         this.grade = Float.parseFloat(grade);
