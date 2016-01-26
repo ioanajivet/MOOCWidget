@@ -19,7 +19,7 @@ public class GraphGeneration {
             String inputPath = args[1] + "scaled_metrics" + week + ".csv";
             String outputPath = args[2];
             //inputPath: "data\\2015\\user_metrics\\"
-            //outputPath: "generate\\2015\\"
+            //outputPath: "generate\\2015\\js\\"
 
             generateJS(week, inputPath, outputPath);
             //generatePNG();
@@ -43,7 +43,8 @@ public class GraphGeneration {
         thresholds = getThresholdsString(nextLine);
 
         while ((nextLine = csvReader.readNext()) != null) {
-            filename = nextLine[0].substring(nextLine[0].indexOf("3T"));
+           // filename = nextLine[0].substring(nextLine[0].indexOf("3T"));
+            filename = nextLine[0];
             output = new FileWriter(outputPath + filename + ".js");
 
             values = getValuesString(nextLine);
@@ -72,7 +73,7 @@ public class GraphGeneration {
     private static void generateChartPNG(String user) throws IOException{
         String phantom;
 
-        phantom = "phantomjs highcharts-convert.js -infile 2015/js/" + user + ".js -outfile 2015/out/" + user + ".png -scale 2.5 -width 600";
+        phantom = "phantomjs highcharts-convert.js -infile 2016/js/" + user + ".js -outfile 2016/out/" + user + ".png -scale 2.5 -width 600";
 
         //ProcessBuilder builder = new ProcessBuilder(
           //      "cmd.exe", "/c", "cd \"C:\\Users\\Ioana\\Desktop\\Thesis\\Widget\\generate\" && " + phantom);
