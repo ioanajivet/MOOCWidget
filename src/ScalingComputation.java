@@ -15,7 +15,7 @@ import java.util.Map;
 public class ScalingComputation {
 
     static HashMap<String, UserForGraphGeneration> users;
-    static double[] thresholds;
+    static int[] thresholds;
     static double[] maximums;
 
     static HashMap<String, Integer> scaledWeeklyTimes;
@@ -27,16 +27,17 @@ public class ScalingComputation {
 
         public static void main(String[] args) throws IOException,ParseException
         {
-            int week = 2;
+            int week = 3;
 
             initialize();
 
             readMetrics(week, "data\\2016\\user_metrics\\");
 
-            readThresholds(week, "data\\thresholds\\thresholds5.csv");
+           // readThresholds(week, "data\\thresholds\\thresholds5.csv");
             readMaximums(week, "data\\thresholds\\maximum5.csv");
+            readScaledThresholds(week, "data\\thresholds\\scaled_thresholds5.csv");
 
-            scaleThresholds(week);
+            //scaleThresholds(week);
             scaleMetrics(week);
 
             writeScaledMetrics(week, "data\\2016\\user_metrics\\scaled_metrics");
@@ -57,7 +58,7 @@ public class ScalingComputation {
         while ((nextLine = csvReader.readNext()) != null) {
             shortId = nextLine[0].substring(nextLine[0].indexOf("1T2016_") + 7);
 
-            if(Integer.parseInt(shortId) % 2 == 1)
+            if(Integer.parseInt(shortId) % 2 == 1 && shortId.compareTo("7538013") !=0 && shortId.compareTo("7592701") != 0)
                 continue;
 
             UserForGraphGeneration current = new UserForGraphGeneration(shortId);
@@ -92,7 +93,7 @@ public class ScalingComputation {
         csvReader.close();
     }
 
-    private static void readThresholds(int week, String filename) throws IOException {
+/*    private static void readThresholds(int week, String filename) throws IOException {
         CSVReader csvReader = new CSVReader(new FileReader(filename));
         String [] nextLine;
         int i = 0;
@@ -101,6 +102,20 @@ public class ScalingComputation {
 
         while ((nextLine = csvReader.readNext()) != null) {
             thresholds[i++] = Double.parseDouble(nextLine[week]);
+        }
+
+        csvReader.close();
+    }*/
+
+    private static void readScaledThresholds(int week, String filename) throws IOException {
+        CSVReader csvReader = new CSVReader(new FileReader(filename));
+        String [] nextLine;
+        int i = 0;
+
+        csvReader.readNext();
+
+        while ((nextLine = csvReader.readNext()) != null) {
+            thresholds[i++] = Integer.parseInt(nextLine[week]);
         }
 
         csvReader.close();
@@ -114,7 +129,6 @@ public class ScalingComputation {
         csvReader.readNext();
 
         while ((nextLine = csvReader.readNext()) != null) {
-            System.out.println(Double.parseDouble(nextLine[week]));
             maximums[i++] = Double.parseDouble(nextLine[week]);
         }
 
@@ -162,7 +176,7 @@ public class ScalingComputation {
     //************************
     //************ Computations
 
-    private static void scaleThresholds(int week){
+/*    private static void scaleThresholds(int week){
 
         thresholds[0] = Math.round(thresholds[0]*10/maximums[0]);
         thresholds[1] = Math.round(thresholds[1]*10/maximums[1]);
@@ -181,7 +195,7 @@ public class ScalingComputation {
 
         for(int i=0;i<6;i++)
             System.out.println(i + ": " + thresholds[i]);
-    }
+    }*/
 
     private static void scaleMetrics(int week){
         scalePlatformTime(week);
@@ -282,7 +296,7 @@ public class ScalingComputation {
 
     private static void initialize() {
         users = new HashMap<>();
-        thresholds = new double[6];
+        thresholds = new int[6];
         maximums = new double[6];
 
         scaledWeeklyTimes = new HashMap<>();

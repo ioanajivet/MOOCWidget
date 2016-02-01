@@ -72,7 +72,7 @@ public class MetricComputation {
         //computeWeeklyRatioTimes();
 
         readVideosPublished();
-        System.out.println(videosPerWeek.get(1).size());
+
         computeDistinctVideos();
 
         readProblems();
@@ -152,7 +152,7 @@ public class MetricComputation {
     }
 
     private static void readUsers() throws IOException {
-        CSVReader csvReader = new CSVReader(new FileReader("data\\2016\\user_pii.csv"));
+        CSVReader csvReader = new CSVReader(new FileReader("data\\2016\\week2\\user_pii.csv"));
         String [] nextLine;
         String id;
 
@@ -170,7 +170,7 @@ public class MetricComputation {
 
     //todo check if both HashMaps are needed
     private static void readProblems() throws IOException, ParseException{
-        CSVReader csvReader = new CSVReader(new FileReader("data\\2016\\problems.csv"));
+        CSVReader csvReader = new CSVReader(new FileReader("data\\2016\\week3\\problems.csv"));
         String [] nextLine;
         int week;
         int problemcount = 0;
@@ -178,18 +178,20 @@ public class MetricComputation {
         csvReader.readNext();
 
         while ((nextLine = csvReader.readNext()) != null) {
+
+            if(!nextLine[1].startsWith("Weekly assessment"))
+                continue;
+
             week = Integer.parseInt(nextLine[3]) + 1;
 
-            if (week >= 2 && week <= 7) {
-                //less than 8, because the rest are not educational problems i.e: "opinion about the course" and exam published in march
-                problemsWeek.put(nextLine[0], week);
+            problemsWeek.put(nextLine[0], week);
 
-                if(!problemsPerWeek.containsKey(week))
-                    problemsPerWeek.put(week, new ArrayList<>());
+            if(!problemsPerWeek.containsKey(week))
+                problemsPerWeek.put(week, new ArrayList<>());
 
-                problemsPerWeek.get(week).add(nextLine[0]);
-                problemcount++;
-            }
+            problemsPerWeek.get(week).add(nextLine[0]);
+            problemcount++;
+
         }
 
         System.out.println("Problem read: " + problemcount);
@@ -198,7 +200,7 @@ public class MetricComputation {
     }
 
     private static void readSubmissions() throws IOException,ParseException {
-        CSVReader csvReader = new CSVReader(new FileReader("data\\2016\\submissions.csv"));
+        CSVReader csvReader = new CSVReader(new FileReader("data\\2016\\week3\\submissions.csv"));
         String [] nextLine;
         UserForMetricsComputation user;
         int week;
@@ -232,7 +234,7 @@ public class MetricComputation {
     }
 
     private static void readVideosPublished() throws IOException {
-        CSVReader resources = new CSVReader(new FileReader("data\\2016\\resources.csv"));
+        CSVReader resources = new CSVReader(new FileReader("data\\2016\\week3\\resources.csv"));
         String [] nextLine;
         int week;
         int videocount = 0;
@@ -267,7 +269,7 @@ public class MetricComputation {
 
     private static void computeWeeklyPlatformTimes() throws IOException {
         //session_id, course_user_id, start_time, duration
-        CSVReader csvReader = new CSVReader(new FileReader("data\\2016\\sessions.csv"));
+        CSVReader csvReader = new CSVReader(new FileReader("data\\2016\\week3\\sessions.csv"));
         String[] nextLine;
         int duration, week;
 
@@ -285,7 +287,7 @@ public class MetricComputation {
     }
 
     private static void computeWeeklyVideoTimes() throws IOException {
-        CSVReader observations = new CSVReader(new FileReader("data\\2016\\observations.csv"));
+        CSVReader observations = new CSVReader(new FileReader("data\\2016\\week3\\observations.csv"));
         String[] nextLine;
         String videoStart;
 
@@ -303,7 +305,7 @@ public class MetricComputation {
     //-------**********-------------
     //TODO: merge it with computeWeeklyVideoTimes not to read observations.csv twice
     private static void computeDistinctVideos() throws IOException {
-        CSVReader observations = new CSVReader(new FileReader("data\\2016\\observations.csv"));
+        CSVReader observations = new CSVReader(new FileReader("data\\2016\\week3\\observations.csv"));
         String[] nextLine;
         String videoID;
 

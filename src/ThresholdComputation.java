@@ -26,6 +26,13 @@ public class ThresholdComputation {
     static HashMap<Integer, ArrayList<Integer>> weeklyAssignments;
     static HashMap<Integer, ArrayList<Integer>> weeklyUntilDeadline;
 
+    static int[] maximumPlatformTime;
+    static int[] maximumVideoTime;
+    static double[] maximumRatio;
+    static int[] maximumVideos;
+    static int[] maximumAssignments;
+    static int[] maximumUntilDeadline;
+
     public static void main(String[] args) throws IOException, ParseException {
 
         initialize();
@@ -35,6 +42,8 @@ public class ThresholdComputation {
         //writeThresholds("thresholds0.csv", 0);
         //writeThresholds("thresholds10.csv", 10);
         writeThresholds("data\\thresholds\\thresholds5.csv", 5);
+        writeMaximum("data\\thresholds\\maximum5.csv");
+        writeScaledThresholds("data\\thresholds\\scaled_thresholds5.csv", 5);
 
     }
 
@@ -56,6 +65,13 @@ public class ThresholdComputation {
             weeklyAssignments.put(i, new ArrayList<>());
             weeklyUntilDeadline.put(i, new ArrayList<>());
         }
+
+        maximumPlatformTime = new int[11];
+        maximumVideoTime = new int[11];
+        maximumRatio = new double[11];
+        maximumVideos = new int[11];
+        maximumAssignments = new int[11];
+        maximumUntilDeadline = new int[11];
     }
 
     private static void readMetrics() throws IOException {
@@ -165,6 +181,158 @@ public class ThresholdComputation {
         output.close();
     }
 
+    private static void writeScaledThresholds(String filename, int cutOffPercent) throws IOException {
+        CSVWriter output = new CSVWriter(new FileWriter(filename), ',');
+        String header = "Metric";
+        String[] toWrite;
+        String row;
+        HashMap<Integer, Double> averages;
+
+        for(int i = 1; i < 12; i++)
+            header += "#week " + String.valueOf(i);
+
+        toWrite = header.split("#");
+        output.writeNext(toWrite);
+
+        //Time on platform
+        row = "Time on the platform (s)";
+        averages = calculatePlatformAverageWithCutOffValues(cutOffPercent);
+        for (int i = 1; i < 12; i++) {
+            if(maximumPlatformTime[i-1] == 0)
+                row += "#0";
+            else
+                row += "#" + Math.round(averages.get(i)*10/maximumPlatformTime[i-1]);
+        }
+        toWrite = row.split("#");
+        output.writeNext(toWrite);
+
+        //Video watching
+        row = "Time on videos (s)";
+        averages = calculateVideoAverageWithCutOffValues(cutOffPercent);
+        for(int i = 1; i < 12; i++) {
+            if(maximumVideoTime[i-1] == 0)
+                row += "#0";
+            else
+                row += "#" + Math.round(averages.get(i)*10/maximumVideoTime[i-1]);
+        }
+        toWrite = row.split("#");
+        output.writeNext(toWrite);
+
+        //Ratio of video/platform
+        row = "Ratio video/platform";
+        averages = calculateRatioAverageWithCutOffValues(cutOffPercent);
+        for(int i = 1; i < 12; i++) {
+            if(maximumRatio[i-1] == 0)
+                row += "#0";
+            else
+                row += "#" + Math.round(averages.get(i)*10/maximumRatio[i-1]);
+        }
+        toWrite = row.split("#");
+        output.writeNext(toWrite);
+
+        //Distinct videos
+        row = "Distinct videos";
+        averages = calculateDistinctVideoAverageWithCutOffValues(cutOffPercent);
+        for(int i = 1; i < 12; i++) {
+            if(maximumVideos[i-1] == 0)
+                row += "#0";
+            else
+                row += "#" + Math.round(averages.get(i)*10/maximumVideos[i-1]);
+        }
+        toWrite = row.split("#");
+        output.writeNext(toWrite);
+
+        //Assignments
+        row = "Assignments";
+        averages = calculateAssignmentsAverageWithCutOffValues(cutOffPercent);
+        for(int i = 1; i < 12; i++) {
+            if(maximumAssignments[i-1] == 0)
+                row += "#0";
+            else
+                row += "#" + Math.round(averages.get(i)*10/maximumAssignments[i-1]);
+        }
+        toWrite = row.split("#");
+        output.writeNext(toWrite);
+
+        //Until deadline
+        row = "Until deadline (h)";
+        averages = calculateUntilDeadlineAverageWithCutOffValues(cutOffPercent);
+        for(int i = 1; i < 12; i++) {
+            if(maximumUntilDeadline[i-1] == 0)
+                row += "#0";
+            else
+                row += "#" + Math.round(averages.get(i)*10/maximumUntilDeadline[i-1]);
+        }
+        toWrite = row.split("#");
+        output.writeNext(toWrite);
+
+        output.close();
+    }
+
+    private static void writeMaximum(String filename) throws IOException {
+        CSVWriter output = new CSVWriter(new FileWriter(filename), ',');
+        String header = "Metric";
+        String[] toWrite;
+        String row;
+        HashMap<Integer, Double> averages;
+
+        for(int i = 1; i < 12; i++)
+            header += "#week " + String.valueOf(i);
+
+        toWrite = header.split("#");
+        output.writeNext(toWrite);
+
+        //Time on platform
+        row = "Time on the platform (s)";
+        for (int i = 1; i < 12; i++) {
+            row += "#" + maximumPlatformTime[i-1];
+        }
+        toWrite = row.split("#");
+        output.writeNext(toWrite);
+
+        //Video watching
+        row = "Time on videos (s)";
+        for(int i = 1; i < 12; i++) {
+            row += "#" + maximumVideoTime[i-1];
+        }
+        toWrite = row.split("#");
+        output.writeNext(toWrite);
+
+        //Ratio of video/platform
+        row = "Ratio video/platform";
+        for(int i = 1; i < 12; i++) {
+            row += "#" + maximumRatio[i-1];
+        }
+        toWrite = row.split("#");
+        output.writeNext(toWrite);
+
+        //Distinct videos
+        row = "Distinct videos";
+        for(int i = 1; i < 12; i++) {
+            row += "#" + maximumVideos[i-1];
+        }
+        toWrite = row.split("#");
+        output.writeNext(toWrite);
+
+        //Assignments
+        row = "Assignments";
+        for(int i = 1; i < 12; i++) {
+            row += "#" + maximumAssignments[i-1];
+        }
+        toWrite = row.split("#");
+        output.writeNext(toWrite);
+
+        //Until deadline
+        row = "Until deadline (h)";
+        for(int i = 1; i < 12; i++) {
+            row += "#" + maximumUntilDeadline[i-1];
+        }
+        toWrite = row.split("#");
+        output.writeNext(toWrite);
+
+        output.close();
+    }
+
     //************************
     //************ Compute data
     private static HashMap<Integer, Double> calculatePlatformAverageWithCutOffValues(int cutOffPercent) {
@@ -183,6 +351,8 @@ public class ThresholdComputation {
 
             cutOffMin = min + (max - min) * cutOffPercent / 100;
             cutOffMax = max - (max - min) * cutOffPercent / 100;
+
+            maximumPlatformTime[i-1] = cutOffMax;
 
             count = getCountOfCutOffRange(weekValues, cutOffMin, cutOffMax);
             sum = getSum(weekValues, cutOffMin, cutOffMax);
@@ -211,6 +381,8 @@ public class ThresholdComputation {
             cutOffMin = min + (max - min) * cutOffPercent / 100;
             cutOffMax = max - (max - min) * cutOffPercent / 100;
 
+            maximumVideoTime[i-1] = cutOffMax;
+
             count = getCountOfCutOffRange(weekValues, cutOffMin, cutOffMax);
             sum = getSum(weekValues, cutOffMin, cutOffMax);
 
@@ -236,6 +408,8 @@ public class ThresholdComputation {
 
             cutOffMin = min + (max - min) * cutOffPercent / 100;
             cutOffMax = max - (max - min) * cutOffPercent / 100;
+
+            maximumRatio[i-1] = cutOffMax;
 
             count = getCountOfCutOffRange(weekValues, cutOffMin, cutOffMax);
             sum = getSum(weekValues, cutOffMin, cutOffMax);
@@ -263,6 +437,8 @@ public class ThresholdComputation {
             cutOffMin = min + (max - min) * cutOffPercent / 100;
             cutOffMax = max - (max - min) * cutOffPercent / 100;
 
+            maximumVideos[i-1] = cutOffMax;
+
             count = getCountOfCutOffRange(weekValues, cutOffMin, cutOffMax);
             sum = getSum(weekValues, cutOffMin, cutOffMax);
 
@@ -289,6 +465,8 @@ public class ThresholdComputation {
             cutOffMin = min + (max - min) * cutOffPercent / 100;
             cutOffMax = max - (max - min) * cutOffPercent / 100;
 
+            maximumAssignments[i-1] = cutOffMax;
+
             count = getCountOfCutOffRange(weekValues, cutOffMin, cutOffMax);
             sum = getSum(weekValues, cutOffMin, cutOffMax);
 
@@ -314,6 +492,8 @@ public class ThresholdComputation {
 
             cutOffMin = min + (max - min) * cutOffPercent / 100;
             cutOffMax = max - (max - min) * cutOffPercent / 100;
+
+            maximumUntilDeadline[i-1] = cutOffMax;
 
             count = getCountOfCutOffRange(weekValues, cutOffMin, cutOffMax);
             sum = getSum(weekValues, cutOffMin, cutOffMax);
