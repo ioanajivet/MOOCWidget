@@ -1,36 +1,38 @@
 /**
  * Created by Ioana on 1/9/2016.
+ *
+ * Command line arguments:
+ * args[0] = input file that contains the scaled metrics that will be used for drawing the charts
+ * args[1] = jsPath for where the .js files with options will be saved
+ * args[2] = chartPath for where the .png files will be saved
+ *
+ * Examples:
+ * -- inputPath: "data/2016/user_metrics/scaled_metrics2.csv"
+ * -- jsPath: "generate/2016/week2/js/"
+ * -- chartPath: "generate/2016/week2/out/"
  */
 
 import com.opencsv.CSVReader;
-import com.opencsv.CSVWriter;
 
 import java.io.*;
 import java.text.ParseException;
-import java.util.*;
 
-//TODO: check file paths for file read and generation so they don't overwrite stuff
-//TODO: check consistency of week numbering: starting with 0 or with 1
 public class GraphGeneration {
 
         public static void main(String[] args) throws IOException,ParseException
         {
-            int week = Integer.parseInt(args[0]);
-            String inputPath = args[1] + "scaled_metrics" + week + ".csv";
-            String outputPath = args[2];
-            //inputPath: "data\\2015\\user_metrics\\"
-            //outputPath: "generate\\2015\\js\\"
+            String inputPath = args[0];
+            String jsPath = args[1];
+            String chartPath = args[2];
 
-            generateJS(week, inputPath, outputPath);
-            //generatePNG();
+            generateCharts(inputPath, jsPath, chartPath);
 
         }
-
 
     //************************
     //************ Loading data
 
-    private static void generateJS(int week, String inputPath, String outputPath) throws IOException {
+    private static void generateCharts(String inputPath, String jsPath, String chartPath) throws IOException {
         CSVReader csvReader = new CSVReader(new FileReader(inputPath));
         Writer output;
         String [] nextLine;
@@ -43,9 +45,8 @@ public class GraphGeneration {
         thresholds = getThresholdsString(nextLine);
 
         while ((nextLine = csvReader.readNext()) != null) {
-           // filename = nextLine[0].substring(nextLine[0].indexOf("3T"));
             filename = nextLine[0];
-            output = new FileWriter(outputPath + filename + ".js");
+            output = new FileWriter(jsPath + filename + ".js");
 
             values = getValuesString(nextLine);
             toWrite = getAreaChartOptionsAsString(thresholds, values);
@@ -53,10 +54,10 @@ public class GraphGeneration {
             output.write(toWrite);
             output.close();
 
-            generateChartPNG(filename);
+            generateChartPNG(filename, jsPath, chartPath);
         }
 
-        System.out.println("Generated .js files.");
+        System.out.println("Finished generating charts.");
         csvReader.close();
 
     }
@@ -64,17 +65,12 @@ public class GraphGeneration {
     //************************
     //************ Writing data
 
-/*    private static void generatePNG() throws IOException {
-        for (Map.Entry<String, UserForGraphGeneration> entry : users.entrySet()) {
-            generateChartPNG(entry.getKey().substring(18));
-        }
-    }*/
-
-    private static void generateChartPNG(String user) throws IOException{
+    private static void generateChartPNG(String user, String jsPath, String chartPath) throws IOException{
         String phantom;
 
-        phantom = "phantomjs highcharts-convert.js -infile 2016/js/" + user + ".js -outfile 2016/out/" + user + ".png -scale 2.5 -width 600";
+        phantom = "phantomjs highcharts-convert.js -infile " + jsPath + user + ".js -outfile " + chartPath + user + ".png -scale 2.5 -width 600";
 
+        //for Windows
         //ProcessBuilder builder = new ProcessBuilder(
           //      "cmd.exe", "/c", "cd \"C:\\Users\\Ioana\\Desktop\\Thesis\\Widget\\generate\" && " + phantom);
 
@@ -91,10 +87,6 @@ public class GraphGeneration {
             System.out.println(line);
         }
     }
-
-    //************************
-    //************ Computations
-
 
     //************************
     //************ Utils

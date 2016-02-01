@@ -8,7 +8,9 @@
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 
-import java.io.*;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -19,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 
 //TODO: check file paths for file read and generation so they don't overwrite stuff
 //TODO: check consistency of week numbering: starting with 0 or with 1
-public class MetricComputation {
+public class MetricComputation2015 {
 
     static HashMap<String, UserForMetricsComputation> users;
     static HashMap<Integer, ArrayList<String>> videosPerWeek;
@@ -35,6 +37,7 @@ public class MetricComputation {
             initialize();
             generateMetrics(week);
 
+            //write metrics only for week 1
            // for(int i = 1; i < 12; i++)
             writeMetrics("data\\2016\\user_metrics\\metrics" + week + ".csv", week);
 
@@ -53,6 +56,7 @@ public class MetricComputation {
     }
 
     private static void generateMetrics(int week) throws IOException, ParseException {
+        //readUsersThreshold(0.6);
 
         readUsers();
         readVideosPublished();
@@ -109,6 +113,20 @@ public class MetricComputation {
 
     //************************
     //************ Loading data
+    private static void readUsersThreshold(double threshold) throws IOException {
+        CSVReader csvReader = new CSVReader(new FileReader("data\\2015\\course_user.csv"));
+        String [] nextLine;
+
+        csvReader.readNext();
+
+        while ((nextLine = csvReader.readNext()) != null) {
+            if(Double.parseDouble(nextLine[1]) >= threshold)
+                users.put(nextLine[0], new UserForMetricsComputation(nextLine[0],nextLine[1]));
+        }
+
+        csvReader.close();
+
+    }
 
     private static void readUsers() throws IOException {
         CSVReader csvReader = new CSVReader(new FileReader("data\\2016\\user_pii.csv"));
@@ -325,6 +343,32 @@ public class MetricComputation {
             return TimeUnit.MILLISECONDS.toHours(diff);
 
         return -1;
+    }
+
+    private static int getWeek2015(String startTime){
+        if(startTime.compareTo("2014-10-28") > 0 && startTime.compareTo("2014-11-04") < 0)
+            return 1;
+        if(startTime.compareTo("2014-11-04") > 0 && startTime.compareTo("2014-11-11") < 0)
+            return 2;
+        if(startTime.compareTo("2014-11-11") > 0 && startTime.compareTo("2014-11-18") < 0)
+            return 3;
+        if(startTime.compareTo("2014-11-18") > 0 && startTime.compareTo("2014-11-25") < 0)
+            return 4;
+        if(startTime.compareTo("2014-11-25") > 0 && startTime.compareTo("2014-12-02") < 0)
+            return 5;
+        if(startTime.compareTo("2014-12-02") > 0 && startTime.compareTo("2014-12-09") < 0)
+            return 6;
+        if(startTime.compareTo("2014-12-09") > 0 && startTime.compareTo("2014-12-16") < 0)
+            return 7;
+        if(startTime.compareTo("2014-12-16") > 0 && startTime.compareTo("2014-12-23") < 0)
+            return 8;
+        if(startTime.compareTo("2014-12-23") > 0 && startTime.compareTo("2014-12-30") < 0)
+            return 9;
+        if(startTime.compareTo("2014-12-30") > 0 && startTime.compareTo("2015-01-06") < 0)
+            return 10;
+        if(startTime.compareTo("2015-01-06") > 0 && startTime.compareTo("2015-01-13") < 0)
+            return 11;
+        return 99;
     }
 
     private static int getWeek(String startTime){
