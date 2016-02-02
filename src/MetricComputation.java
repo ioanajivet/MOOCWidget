@@ -163,6 +163,7 @@ public class MetricComputation {
     private static void readProblems() throws IOException, ParseException{
         CSVReader csvReader = new CSVReader(new FileReader("data\\2016\\problems.csv"));
         String [] nextLine;
+        String problemId;
         int week;
 
         csvReader.readNext();
@@ -174,12 +175,14 @@ public class MetricComputation {
 
             week = Integer.parseInt(nextLine[3]) + 1;
 
-            problemsWeek.put(nextLine[0], week);
+            problemId = nextLine[0].substring(nextLine[0].indexOf("block@") + 6);
+
+            problemsWeek.put(problemId, week);
 
             if(!problemsPerWeek.containsKey(week))
                 problemsPerWeek.put(week, new ArrayList<>());
 
-            problemsPerWeek.get(week).add(nextLine[0]);
+            problemsPerWeek.get(week).add(problemId);
 
         }
 
@@ -213,7 +216,7 @@ public class MetricComputation {
         UserForMetricsComputation user;
         int week;
         long hours;
-        String submissionTime;
+        String submissionTime, problemId;
         int sub = 0;
 
         csvReader.readNext();
@@ -224,16 +227,18 @@ public class MetricComputation {
             if (user == null)    //user are not in the test base -> ignore submission
                 continue;
 
-            if(!problemsWeek.containsKey(nextLine[2]))   //ignore problems that are not graded
+            problemId = nextLine[2].substring(nextLine[2].indexOf("block@") + 6);
+
+            if(!problemsWeek.containsKey(problemId))   //ignore problems that are not graded
                 continue;
 
             sub++;
 
-            week = problemsWeek.get(nextLine[2]);
+            week = problemsWeek.get(problemId);
             submissionTime = nextLine[3].substring(0, 22);
             hours = differenceBetweenDatesInHours(getProblemDeadlineForWeek(week), getDateFromString(submissionTime));
 
-            user.addSubmission(week, nextLine[2], hours, getWeek(submissionTime));
+            user.addSubmission(week, problemId, hours, getWeek(submissionTime));
         }
 
         csvReader.close();
