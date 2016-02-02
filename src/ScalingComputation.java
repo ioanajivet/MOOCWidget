@@ -18,6 +18,9 @@ public class ScalingComputation {
     static int[] thresholds;
     static double[] maximums;
 
+    static int[] maximumAssignments;
+    static int[] maximumVideos;
+
     static HashMap<String, Integer> scaledWeeklyTimes;
     static HashMap<String, Integer> scaledVideoTimes;
     static HashMap<String, Integer> scaledRatio;
@@ -33,11 +36,9 @@ public class ScalingComputation {
 
             readMetrics(week, "data\\2016\\user_metrics\\");
 
-           // readThresholds(week, "data\\thresholds\\thresholds5.csv");
             readMaximums(week, "data\\thresholds\\maximum5.csv");
             readScaledThresholds(week, "data\\thresholds\\scaled_thresholds5.csv");
 
-            //scaleThresholds(week);
             scaleMetrics(week);
 
             writeScaledMetrics(week, "data\\2016\\user_metrics\\scaled_metrics");
@@ -71,10 +72,15 @@ public class ScalingComputation {
             current.setUntilDeadline(week, Integer.parseInt(nextLine[6]));
 
             users.put(shortId, current);
+
+            if(Integer.parseInt(nextLine[5]) > maximumAssignments[week-1])
+                maximumAssignments[week-1] = Integer.parseInt(nextLine[5]);
         }
 
         csvReader.close();
 
+        System.out.println("Maximum Assignments for week " + week + ": " + maximumAssignments[week-1]);
+        
         readAnonymizedIds();
 
     }
@@ -92,20 +98,6 @@ public class ScalingComputation {
 
         csvReader.close();
     }
-
-/*    private static void readThresholds(int week, String filename) throws IOException {
-        CSVReader csvReader = new CSVReader(new FileReader(filename));
-        String [] nextLine;
-        int i = 0;
-
-        csvReader.readNext();
-
-        while ((nextLine = csvReader.readNext()) != null) {
-            thresholds[i++] = Double.parseDouble(nextLine[week]);
-        }
-
-        csvReader.close();
-    }*/
 
     private static void readScaledThresholds(int week, String filename) throws IOException {
         CSVReader csvReader = new CSVReader(new FileReader(filename));
@@ -175,27 +167,6 @@ public class ScalingComputation {
 
     //************************
     //************ Computations
-
-/*    private static void scaleThresholds(int week){
-
-        thresholds[0] = Math.round(thresholds[0]*10/maximums[0]);
-        thresholds[1] = Math.round(thresholds[1]*10/maximums[1]);
-        thresholds[2] = Math.round(thresholds[2]*10/maximums[2]);
-        thresholds[3] = Math.round(thresholds[3]*10/maximums[3]);
-
-        if(maximums[4] == 0)
-            thresholds[4] = 0;
-        else
-            thresholds[4] = Math.round(thresholds[4]*10/maximums[4]);
-
-        if(maximums[5] == 0)
-            thresholds[5] = 0;
-        else
-            thresholds[5] = Math.round(thresholds[5]*10/maximums[5]);
-
-        for(int i=0;i<6;i++)
-            System.out.println(i + ": " + thresholds[i]);
-    }*/
 
     private static void scaleMetrics(int week){
         scalePlatformTime(week);
@@ -273,7 +244,10 @@ public class ScalingComputation {
         for (Map.Entry<String, UserForGraphGeneration> entry : users.entrySet()) {
             current = entry.getValue();
             assignments = current.getAssignments(week);
-            scaledValue = (int) Math.round(assignments*10.0/maximums[4]);
+            if(maximumAssignments[week-1] == 0)
+                scaledValue = 0;
+            else
+                scaledValue = (int) Math.round(assignments*10.0/maximumAssignments[week-1]);
             scaledAssignments.put(entry.getKey(), regularized(scaledValue));
         }
     }
@@ -298,6 +272,9 @@ public class ScalingComputation {
         users = new HashMap<>();
         thresholds = new int[6];
         maximums = new double[6];
+
+        maximumAssignments = new int[11];
+        maximumVideos = new int[11];
 
         scaledWeeklyTimes = new HashMap<>();
         scaledVideoTimes = new HashMap<>();
