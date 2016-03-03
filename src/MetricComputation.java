@@ -30,15 +30,25 @@ public class MetricComputation {
 
         public static void main(String[] args) throws IOException,ParseException
         {
-            int week = Integer.parseInt(args[0]);
+            //int week = Integer.parseInt(args[0]);
+            int week = 2;
 
             initialize();
             generateMetrics(week);
 
            // for(int i = 1; i < 12; i++)
-            writeMetrics("data\\2016\\user_metrics\\metrics" + week + ".csv", week);
+         //   writeMetrics("data\\2016\\user_metrics\\metrics" + week + ".csv", week);
+            writeMetrics("data\\2016\\user_metrics\\metrics" + 1 + ".csv", 1);
 
         }
+
+    public static void metricComputation(int week) throws ParseException, IOException {
+        initialize();
+        generateMetrics(week);
+
+        // for(int i = 1; i < 12; i++)
+        writeMetrics("data\\2016\\user_metrics\\metrics" + week + ".csv", week);
+    }
 
     private static void initialize() {
         users = new HashMap<>();
@@ -239,6 +249,8 @@ public class MetricComputation {
             hours = differenceBetweenDatesInHours(getProblemDeadlineForWeek(week), getDateFromString(submissionTime));
 
             user.addSubmission(week, problemId, hours, getWeek(submissionTime));
+            if(getWeek(submissionTime) == 1)
+                System.out.println("added submission " + problemId + " for user " + user.getId() + " @ " + submissionTime);
         }
 
         csvReader.close();
@@ -252,6 +264,7 @@ public class MetricComputation {
         String[] nextLine;
         String videoID;
         String videoStart;
+        int week;
 
         csvReader.readNext();
 
@@ -259,10 +272,15 @@ public class MetricComputation {
             if(users.containsKey(nextLine[1])) {
                 //video time computations
                 videoStart = nextLine[0].substring(nextLine[0].indexOf("_2016-")+1);
-                users.get(nextLine[1]).addVideoTime(getWeek(videoStart), Integer.parseInt(nextLine[3]));
+                week = getWeek(videoStart);
+
+                if(week != 99)
+                    users.get(nextLine[1]).addVideoTime(getWeek(videoStart), Integer.parseInt(nextLine[3]));
 
                 //distinct videos computations
                 videoID = nextLine[2];
+
+                System.out.println(getWeekForVideo(videoID));
                 users.get(nextLine[1]).addVideo(videoID, getWeekForVideo(videoID));
             }
         }

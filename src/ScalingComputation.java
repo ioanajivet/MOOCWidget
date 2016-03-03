@@ -28,9 +28,9 @@ public class ScalingComputation {
     static HashMap<String, Integer> scaledAssignments;
     static HashMap<String, Integer> scaledDeadlines;
 
-        public static void main(String[] args) throws IOException,ParseException
+   /*     public static void main(String[] args) throws IOException,ParseException
         {
-            int week = 3;
+            int week = 7;
 
             initialize();
 
@@ -43,8 +43,20 @@ public class ScalingComputation {
 
             writeScaledMetrics(week, "data\\2016\\user_metrics\\scaled_metrics");
 
-        }
+        }*/
 
+    public static void scalingComputation(int week) throws IOException {
+        initialize();
+
+        readMetrics(week, "data\\2016\\user_metrics\\");
+
+        readMaximums(week, "data\\thresholds\\maximum5.csv");
+        readScaledThresholds(week, "data\\thresholds\\scaled_thresholds5.csv");
+
+        scaleMetrics(week);
+
+        writeScaledMetrics(week, "data\\2016\\user_metrics\\scaled_metrics");
+    }
 
     //************************
     //************ Loading data
@@ -80,7 +92,7 @@ public class ScalingComputation {
         csvReader.close();
 
         System.out.println("Maximum Assignments for week " + week + ": " + maximumAssignments[week-1]);
-        
+
         readAnonymizedIds();
 
     }
