@@ -23,6 +23,12 @@ public class PostDataAnalysis {
     static HashMap<String, Integer> testAggregatedSessions;
     static HashMap<String, Integer> controlAggregatedSessions;
 
+    static HashMap<String, List<String>> testUniquePerDay;
+    static HashMap<String, List<String>> controlUniquePerDay;
+
+    static HashMap<Integer, List<String>> testUniquePerWeek;
+    static HashMap<Integer, List<String>> controlUniquePerWeek;
+
     static double[] thresholds;
 
     public static void main(String[] args) throws IOException, ParseException {
@@ -30,118 +36,21 @@ public class PostDataAnalysis {
 
         initialize();
 
+        //** Average for indicators
         //readUsers();
         //readMetrics("data\\2016\\user_metrics\\");
-
         //writeMetrics(endWeek);
         //analyseMetrics(endWeek);
 
-        lastSession(endWeek);
+        //** Engagement
+        //lastSession(endWeek);
+        //uniqueUsers(endWeek);
+
+        //** Threshold Comparison
 
     }
 
-    private static void lastSession(int endWeek) throws IOException, ParseException {
 
-        readSessions(endWeek);
-
-        writeSessions(controlGroupSession, "data\\2016\\post-data\\control_last_session_" + endWeek + ".csv");
-        writeSessions(testGroupSession, "data\\2016\\post-data\\test_last_session_" + endWeek + ".csv");
-
-        aggregateLastSessions(testGroupSession, testAggregatedSessions);
-        aggregateLastSessions(controlGroupSession, controlAggregatedSessions);
-
-        writeAggregatedSessions(testAggregatedSessions, "data\\2016\\post-data\\test_aggregated_sessions_" + endWeek + ".csv");
-        writeAggregatedSessions(controlAggregatedSessions, "data\\2016\\post-data\\control_aggregated_sessions_" + endWeek + ".csv");
-    }
-
-    private static void writeAggregatedSessions(HashMap<String, Integer> aggregatedSessions, String filename) throws IOException {
-        CSVWriter output = new CSVWriter(new FileWriter(filename), ',');
-        String[] toWrite;
-
-        toWrite = "Day#Count".split("#");
-
-        output.writeNext(toWrite);
-
-        for (Map.Entry<String, Integer> entry : aggregatedSessions.entrySet()) {
-            toWrite = (entry.getKey() + "#" + entry.getValue()).split("#");
-            output.writeNext(toWrite);
-        }
-
-        output.close();
-    }
-
-    private static void aggregateLastSessions(HashMap<String, Date> lastSessions, HashMap<String, Integer> aggregatedSessions) {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-        String day;
-        for (Map.Entry<String, Date> entry : lastSessions.entrySet()) {
-            day = dateFormat.format(entry.getValue());
-
-            if(aggregatedSessions.containsKey(day))
-                aggregatedSessions.put(day, aggregatedSessions.get(day) + 1);
-            else
-                aggregatedSessions.put(day, 1);
-
-        }
-    }
-
-    private static void writeSessions(HashMap<String, Date> lastSessions, String filename) throws IOException {
-        CSVWriter output = new CSVWriter(new FileWriter(filename), ',');
-        String[] toWrite;
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-        SimpleDateFormat timeFormat = new SimpleDateFormat("HH");
-
-        toWrite = "User_id#Last session".split("#");
-
-        output.writeNext(toWrite);
-
-        for (Map.Entry<String, Date> entry : lastSessions.entrySet()) {
-            toWrite = (timeFormat.format(entry.getValue()) + "#" + dateFormat.format(entry.getValue())).split("#");
-            output.writeNext(toWrite);
-        }
-
-        output.close();
-    }
-
-    private static void readSessions(int weekToRead) throws IOException, ParseException {
-        //session_id, course_user_id, start_time, duration
-        CSVReader csvReader = new CSVReader(new FileReader("data\\2016\\week" + weekToRead + "\\sessions.csv"));
-        String[] nextLine;
-        String shortId;
-
-        csvReader.readNext();
-
-        while ((nextLine = csvReader.readNext()) != null) {
-
-            if( nextLine[1].compareTo("course-v1:DelftX+CTB3365DWx+1T2016_None") == 0)
-                continue;
-
-            shortId = nextLine[1].substring(nextLine[1].indexOf("1T2016_") + 7);
-            System.out.println(shortId);
-
-            if (testGroupSession.containsKey(shortId)) {
-                if(testGroupSession.get(shortId).compareTo(getDateFromString(nextLine[2])) > 0)
-                    testGroupSession.put(shortId, getDateFromString(nextLine[2]));
-                continue;
-            }
-
-            if (controlGroupSession.containsKey(shortId)) {
-                if(controlGroupSession.get(shortId).compareTo(getDateFromString(nextLine[2])) > 0)
-                    controlGroupSession.put(shortId, getDateFromString(nextLine[2]));
-                continue;
-            }
-
-            if (Integer.parseInt(shortId) % 2 == 0 || shortId.compareTo("7538013") == 0 || shortId.compareTo("7592701") == 0)
-                testGroupSession.put(shortId, getDateFromString(nextLine[2]));
-            else
-                controlGroupSession.put(shortId, getDateFromString(nextLine[2]));
-
-        }
-
-        csvReader.close();
-
-        System.out.println("control: " + controlGroupSession.size());
-        System.out.println("test: " + testGroupSession.size());
-    }
 
     //************************
     //************ Loading data
@@ -156,8 +65,11 @@ public class PostDataAnalysis {
         testAggregatedSessions = new HashMap<>();
         controlAggregatedSessions = new HashMap<>();
 
-        thresholds = new double[6];
+        testUniquePerDay = new HashMap<>();
+        controlUniquePerDay = new HashMap<>();
 
+        testUniquePerWeek = new HashMap<>();
+        controlUniquePerWeek = new HashMap<>();
     }
 
     private static void readUsers() throws IOException {
@@ -198,6 +110,9 @@ public class PostDataAnalysis {
         csvReader.close();
     }
 
+
+    //========= Average on metrics ==========
+
     private static void readMetrics(String filepath) throws IOException {
         //TODO: update end week
         for (int i = 1; i < 8; i++)
@@ -234,8 +149,19 @@ public class PostDataAnalysis {
         readAnonymizedIds();
     }
 
-    //************************
-    //************ Writing data
+    private static void analyseMetrics(int endWeek) throws IOException {
+        CSVWriter output = new CSVWriter(new FileWriter("data\\2016\\post-data\\metrics_overview.csv"), ',');
+
+        writePlatformTimeAnalysis(output, endWeek);
+        writeVideoTimeAnalysis(output, endWeek);
+        writeRatioAnalysis(output, endWeek);
+        writeVideosAnalysis(output, endWeek);
+        writeAssignmentAnalysis(output, endWeek);
+        writeUntilDeadlineAnalysis(output, endWeek);
+
+        output.close();
+
+    }
 
     private static void writeMetrics(int endWeek) throws IOException {
         writePlatformTime(testGroup, "data\\2016\\post-data\\test_after_week" + endWeek + "_platformTime.csv", endWeek);
@@ -255,179 +181,6 @@ public class PostDataAnalysis {
 
         writeUntilDeadline(testGroup, "data\\2016\\post-data\\test_after_week" + endWeek + "_untilDeadline.csv", endWeek);
         writeUntilDeadline(controlGroup, "data\\2016\\post-data\\control_after_week" + endWeek + "_untilDeadline.csv", endWeek);
-    }
-
-    private static void writePlatformTime(HashMap<String, UserForGraphGeneration> users, String filename, int endWeek) throws IOException {
-        CSVWriter output = new CSVWriter(new FileWriter(filename), ',');
-        String[] toWrite;
-        UserForGraphGeneration current;
-
-        String toWriteString = "User_id";
-        for (int i = 1; i <= endWeek; i++)
-            toWriteString += "#Week " + i;
-        toWrite = toWriteString.split("#");
-
-        output.writeNext(toWrite);
-
-        for (Map.Entry<String, UserForGraphGeneration> entry : users.entrySet()) {
-            current = entry.getValue();
-            toWriteString = entry.getKey();
-
-            for (int i = 1; i <= endWeek; i++)
-                toWriteString += "#" + String.valueOf(current.getPlatformTime(i));
-            toWrite = toWriteString.split("#");
-
-            output.writeNext(toWrite);
-        }
-
-        output.close();
-    }
-
-    private static void writeVideoTime(HashMap<String, UserForGraphGeneration> users, String filename, int endWeek) throws IOException {
-        CSVWriter output = new CSVWriter(new FileWriter(filename), ',');
-        String[] toWrite;
-        UserForGraphGeneration current;
-
-        String toWriteString = "User_id";
-        for (int i = 1; i <= endWeek; i++)
-            toWriteString += "#Week " + i;
-        toWrite = toWriteString.split("#");
-
-        output.writeNext(toWrite);
-
-        for (Map.Entry<String, UserForGraphGeneration> entry : users.entrySet()) {
-            current = entry.getValue();
-            toWriteString = entry.getKey();
-
-            for (int i = 1; i <= endWeek; i++)
-                toWriteString += "#" + String.valueOf(current.getVideoTime(i));
-            toWrite = toWriteString.split("#");
-
-            output.writeNext(toWrite);
-        }
-
-        output.close();
-    }
-
-    private static void writeRatioTime(HashMap<String, UserForGraphGeneration> users, String filename, int endWeek) throws IOException {
-        CSVWriter output = new CSVWriter(new FileWriter(filename), ',');
-        String[] toWrite;
-        UserForGraphGeneration current;
-
-        String toWriteString = "User_id";
-        for (int i = 1; i <= endWeek; i++)
-            toWriteString += "#Week " + i;
-        toWrite = toWriteString.split("#");
-
-        output.writeNext(toWrite);
-
-        for (Map.Entry<String, UserForGraphGeneration> entry : users.entrySet()) {
-            current = entry.getValue();
-            toWriteString = entry.getKey();
-
-            for (int i = 1; i <= endWeek; i++)
-                toWriteString += "#" + String.valueOf(current.getRatioTime(i));
-            toWrite = toWriteString.split("#");
-
-            output.writeNext(toWrite);
-        }
-
-        output.close();
-    }
-
-    private static void writeVideos(HashMap<String, UserForGraphGeneration> users, String filename, int endWeek) throws IOException {
-        CSVWriter output = new CSVWriter(new FileWriter(filename), ',');
-        String[] toWrite;
-        UserForGraphGeneration current;
-
-        String toWriteString = "User_id";
-        for (int i = 1; i <= endWeek; i++)
-            toWriteString += "#Week " + i;
-        toWrite = toWriteString.split("#");
-
-        output.writeNext(toWrite);
-
-        for (Map.Entry<String, UserForGraphGeneration> entry : users.entrySet()) {
-            current = entry.getValue();
-            toWriteString = entry.getKey();
-
-            for (int i = 1; i <= endWeek; i++)
-                toWriteString += "#" + String.valueOf(current.getDistinctVideos(i));
-            toWrite = toWriteString.split("#");
-
-            output.writeNext(toWrite);
-        }
-
-        output.close();
-    }
-
-    private static void writeAssignments(HashMap<String, UserForGraphGeneration> users, String filename, int endWeek) throws IOException {
-        CSVWriter output = new CSVWriter(new FileWriter(filename), ',');
-        String[] toWrite;
-        UserForGraphGeneration current;
-
-        String toWriteString = "User_id";
-        for (int i = 1; i <= endWeek; i++)
-            toWriteString += "#Week " + i;
-        toWrite = toWriteString.split("#");
-
-        output.writeNext(toWrite);
-
-        for (Map.Entry<String, UserForGraphGeneration> entry : users.entrySet()) {
-            current = entry.getValue();
-            toWriteString = entry.getKey();
-
-            for (int i = 1; i <= endWeek; i++)
-                toWriteString += "#" + String.valueOf(current.getAssignments(i));
-            toWrite = toWriteString.split("#");
-
-            output.writeNext(toWrite);
-        }
-
-        output.close();
-    }
-
-    private static void writeUntilDeadline(HashMap<String, UserForGraphGeneration> users, String filename, int endWeek) throws IOException {
-        CSVWriter output = new CSVWriter(new FileWriter(filename), ',');
-        String[] toWrite;
-        UserForGraphGeneration current;
-
-        String toWriteString = "User_id";
-        for (int i = 1; i <= endWeek; i++)
-            toWriteString += "#Week " + i;
-        toWrite = toWriteString.split("#");
-
-        output.writeNext(toWrite);
-
-        for (Map.Entry<String, UserForGraphGeneration> entry : users.entrySet()) {
-            current = entry.getValue();
-            toWriteString = entry.getKey();
-
-            for (int i = 1; i <= endWeek; i++)
-                toWriteString += "#" + String.valueOf(current.getUntilDeadline(i));
-            toWrite = toWriteString.split("#");
-
-            output.writeNext(toWrite);
-        }
-
-        output.close();
-    }
-
-    //************************
-    //************ Analysis
-
-    private static void analyseMetrics(int endWeek) throws IOException {
-        CSVWriter output = new CSVWriter(new FileWriter("data\\2016\\post-data\\metrics_overview.csv"), ',');
-
-        writePlatformTimeAnalysis(output, endWeek);
-        writeVideoTimeAnalysis(output, endWeek);
-        writeRatioAnalysis(output, endWeek);
-        writeVideosAnalysis(output, endWeek);
-        writeAssignmentAnalysis(output, endWeek);
-        writeUntilDeadlineAnalysis(output, endWeek);
-
-        output.close();
-
     }
 
     private static void writePlatformTimeAnalysis(CSVWriter output, int endWeek) {
@@ -895,6 +648,377 @@ public class PostDataAnalysis {
         return 0;
     }
 
+    private static void writePlatformTime(HashMap<String, UserForGraphGeneration> users, String filename, int endWeek) throws IOException {
+        CSVWriter output = new CSVWriter(new FileWriter(filename), ',');
+        String[] toWrite;
+        UserForGraphGeneration current;
+
+        String toWriteString = "User_id";
+        for (int i = 1; i <= endWeek; i++)
+            toWriteString += "#Week " + i;
+        toWrite = toWriteString.split("#");
+
+        output.writeNext(toWrite);
+
+        for (Map.Entry<String, UserForGraphGeneration> entry : users.entrySet()) {
+            current = entry.getValue();
+            toWriteString = entry.getKey();
+
+            for (int i = 1; i <= endWeek; i++)
+                toWriteString += "#" + String.valueOf(current.getPlatformTime(i));
+            toWrite = toWriteString.split("#");
+
+            output.writeNext(toWrite);
+        }
+
+        output.close();
+    }
+
+    private static void writeVideoTime(HashMap<String, UserForGraphGeneration> users, String filename, int endWeek) throws IOException {
+        CSVWriter output = new CSVWriter(new FileWriter(filename), ',');
+        String[] toWrite;
+        UserForGraphGeneration current;
+
+        String toWriteString = "User_id";
+        for (int i = 1; i <= endWeek; i++)
+            toWriteString += "#Week " + i;
+        toWrite = toWriteString.split("#");
+
+        output.writeNext(toWrite);
+
+        for (Map.Entry<String, UserForGraphGeneration> entry : users.entrySet()) {
+            current = entry.getValue();
+            toWriteString = entry.getKey();
+
+            for (int i = 1; i <= endWeek; i++)
+                toWriteString += "#" + String.valueOf(current.getVideoTime(i));
+            toWrite = toWriteString.split("#");
+
+            output.writeNext(toWrite);
+        }
+
+        output.close();
+    }
+
+    private static void writeRatioTime(HashMap<String, UserForGraphGeneration> users, String filename, int endWeek) throws IOException {
+        CSVWriter output = new CSVWriter(new FileWriter(filename), ',');
+        String[] toWrite;
+        UserForGraphGeneration current;
+
+        String toWriteString = "User_id";
+        for (int i = 1; i <= endWeek; i++)
+            toWriteString += "#Week " + i;
+        toWrite = toWriteString.split("#");
+
+        output.writeNext(toWrite);
+
+        for (Map.Entry<String, UserForGraphGeneration> entry : users.entrySet()) {
+            current = entry.getValue();
+            toWriteString = entry.getKey();
+
+            for (int i = 1; i <= endWeek; i++)
+                toWriteString += "#" + String.valueOf(current.getRatioTime(i));
+            toWrite = toWriteString.split("#");
+
+            output.writeNext(toWrite);
+        }
+
+        output.close();
+    }
+
+    private static void writeVideos(HashMap<String, UserForGraphGeneration> users, String filename, int endWeek) throws IOException {
+        CSVWriter output = new CSVWriter(new FileWriter(filename), ',');
+        String[] toWrite;
+        UserForGraphGeneration current;
+
+        String toWriteString = "User_id";
+        for (int i = 1; i <= endWeek; i++)
+            toWriteString += "#Week " + i;
+        toWrite = toWriteString.split("#");
+
+        output.writeNext(toWrite);
+
+        for (Map.Entry<String, UserForGraphGeneration> entry : users.entrySet()) {
+            current = entry.getValue();
+            toWriteString = entry.getKey();
+
+            for (int i = 1; i <= endWeek; i++)
+                toWriteString += "#" + String.valueOf(current.getDistinctVideos(i));
+            toWrite = toWriteString.split("#");
+
+            output.writeNext(toWrite);
+        }
+
+        output.close();
+    }
+
+    private static void writeAssignments(HashMap<String, UserForGraphGeneration> users, String filename, int endWeek) throws IOException {
+        CSVWriter output = new CSVWriter(new FileWriter(filename), ',');
+        String[] toWrite;
+        UserForGraphGeneration current;
+
+        String toWriteString = "User_id";
+        for (int i = 1; i <= endWeek; i++)
+            toWriteString += "#Week " + i;
+        toWrite = toWriteString.split("#");
+
+        output.writeNext(toWrite);
+
+        for (Map.Entry<String, UserForGraphGeneration> entry : users.entrySet()) {
+            current = entry.getValue();
+            toWriteString = entry.getKey();
+
+            for (int i = 1; i <= endWeek; i++)
+                toWriteString += "#" + String.valueOf(current.getAssignments(i));
+            toWrite = toWriteString.split("#");
+
+            output.writeNext(toWrite);
+        }
+
+        output.close();
+    }
+
+    private static void writeUntilDeadline(HashMap<String, UserForGraphGeneration> users, String filename, int endWeek) throws IOException {
+        CSVWriter output = new CSVWriter(new FileWriter(filename), ',');
+        String[] toWrite;
+        UserForGraphGeneration current;
+
+        String toWriteString = "User_id";
+        for (int i = 1; i <= endWeek; i++)
+            toWriteString += "#Week " + i;
+        toWrite = toWriteString.split("#");
+
+        output.writeNext(toWrite);
+
+        for (Map.Entry<String, UserForGraphGeneration> entry : users.entrySet()) {
+            current = entry.getValue();
+            toWriteString = entry.getKey();
+
+            for (int i = 1; i <= endWeek; i++)
+                toWriteString += "#" + String.valueOf(current.getUntilDeadline(i));
+            toWrite = toWriteString.split("#");
+
+            output.writeNext(toWrite);
+        }
+
+        output.close();
+    }
+
+
+    //========= Engagement ==========
+    //-------- Day users drop out ---------
+
+    private static void lastSession(int endWeek) throws IOException, ParseException {
+
+        readSessions(endWeek);
+
+        writeSessions(controlGroupSession, "data\\2016\\post-data\\control_last_session_" + endWeek + ".csv");
+        writeSessions(testGroupSession, "data\\2016\\post-data\\test_last_session_" + endWeek + ".csv");
+
+        aggregateLastSessions(testGroupSession, testAggregatedSessions);
+        aggregateLastSessions(controlGroupSession, controlAggregatedSessions);
+
+        writeAggregatedSessions(testAggregatedSessions, "data\\2016\\post-data\\test_aggregated_sessions_" + endWeek + ".csv");
+        writeAggregatedSessions(controlAggregatedSessions, "data\\2016\\post-data\\control_aggregated_sessions_" + endWeek + ".csv");
+    }
+
+    private static void readSessions(int weekToRead) throws IOException, ParseException {
+        //session_id, course_user_id, start_time, duration
+        CSVReader csvReader = new CSVReader(new FileReader("data\\2016\\week" + weekToRead + "\\sessions.csv"));
+        String[] nextLine;
+        String shortId;
+
+        csvReader.readNext();
+
+        while ((nextLine = csvReader.readNext()) != null) {
+
+            if( nextLine[1].compareTo("course-v1:DelftX+CTB3365DWx+1T2016_None") == 0)
+                continue;
+
+            shortId = nextLine[1].substring(nextLine[1].indexOf("1T2016_") + 7);
+            System.out.println(shortId);
+
+            if (testGroupSession.containsKey(shortId)) {
+                if(testGroupSession.get(shortId).compareTo(getDateFromString(nextLine[2])) > 0)
+                    testGroupSession.put(shortId, getDateFromString(nextLine[2]));
+                continue;
+            }
+
+            if (controlGroupSession.containsKey(shortId)) {
+                if(controlGroupSession.get(shortId).compareTo(getDateFromString(nextLine[2])) > 0)
+                    controlGroupSession.put(shortId, getDateFromString(nextLine[2]));
+                continue;
+            }
+
+            if (Integer.parseInt(shortId) % 2 == 0 || shortId.compareTo("7538013") == 0 || shortId.compareTo("7592701") == 0)
+                testGroupSession.put(shortId, getDateFromString(nextLine[2]));
+            else
+                controlGroupSession.put(shortId, getDateFromString(nextLine[2]));
+
+        }
+
+        csvReader.close();
+
+        System.out.println("control: " + controlGroupSession.size());
+        System.out.println("test: " + testGroupSession.size());
+    }
+
+    private static void aggregateLastSessions(HashMap<String, Date> lastSessions, HashMap<String, Integer> aggregatedSessions) {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        String day;
+        for (Map.Entry<String, Date> entry : lastSessions.entrySet()) {
+            day = dateFormat.format(entry.getValue());
+
+            if(aggregatedSessions.containsKey(day))
+                aggregatedSessions.put(day, aggregatedSessions.get(day) + 1);
+            else
+                aggregatedSessions.put(day, 1);
+
+        }
+    }
+
+    private static void writeSessions(HashMap<String, Date> lastSessions, String filename) throws IOException {
+        CSVWriter output = new CSVWriter(new FileWriter(filename), ',');
+        String[] toWrite;
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        SimpleDateFormat timeFormat = new SimpleDateFormat("HH");
+
+        toWrite = "User_id#Last session".split("#");
+
+        output.writeNext(toWrite);
+
+        for (Map.Entry<String, Date> entry : lastSessions.entrySet()) {
+            toWrite = (timeFormat.format(entry.getValue()) + "#" + dateFormat.format(entry.getValue())).split("#");
+            output.writeNext(toWrite);
+        }
+
+        output.close();
+    }
+
+    private static void writeAggregatedSessions(HashMap<String, Integer> aggregatedSessions, String filename) throws IOException {
+        CSVWriter output = new CSVWriter(new FileWriter(filename), ',');
+        String[] toWrite;
+
+        toWrite = "Day#Count".split("#");
+
+        output.writeNext(toWrite);
+
+        for (Map.Entry<String, Integer> entry : aggregatedSessions.entrySet()) {
+            toWrite = (entry.getKey() + "#" + entry.getValue()).split("#");
+            output.writeNext(toWrite);
+        }
+
+        output.close();
+    }
+
+    //-------- Unique users per day/week ---------
+
+    private static void uniqueUsers(int endWeek) throws IOException, ParseException {
+
+        readUniqueUsers(endWeek);
+
+        writeUniqueUsersPerDay(testUniquePerDay, "data\\2016\\post-data\\engagement\\test_unique_daily_" + endWeek + ".csv");
+        writeUniqueUsersPerDay(controlUniquePerDay, "data\\2016\\post-data\\engagement\\control_unique_daily_" + endWeek + ".csv");
+
+        writeUniqueUsersPerWeek(testUniquePerWeek, "data\\2016\\post-data\\engagement\\test_unique_weekly_" + endWeek + ".csv");
+        writeUniqueUsersPerWeek(controlUniquePerWeek, "data\\2016\\post-data\\engagement\\control_unique_weekly_" + endWeek + ".csv");
+
+        System.out.println("Test: " + testUniquePerDay.size());
+        System.out.println("Control: " + controlUniquePerDay.size());
+
+    }
+
+    private static void readUniqueUsers(int endWeek) throws IOException, ParseException {
+        //session_id, course_user_id, start_time, duration
+        CSVReader csvReader = new CSVReader(new FileReader("data\\2016\\week" + endWeek + "\\sessions.csv"));
+        String[] nextLine;
+        String day;
+        int week;
+        String shortId;
+
+        csvReader.readNext();
+
+        while ((nextLine = csvReader.readNext()) != null) {
+
+            if( nextLine[1].compareTo("course-v1:DelftX+CTB3365DWx+1T2016_None") == 0)
+                continue;
+
+            shortId = nextLine[1].substring(nextLine[1].indexOf("1T2016_") + 7);
+            day = nextLine[2].substring(0, 10);
+            week = getWeekFromDate(day);
+
+            if (Integer.parseInt(shortId) % 2 == 0 || shortId.compareTo("7538013") == 0 || shortId.compareTo("7592701") == 0) {
+                addUniqueUser(testUniquePerDay, day, shortId);
+                addUniqueUserPerWeek(testUniquePerWeek, week, shortId);
+            }
+            else {
+                addUniqueUser(controlUniquePerDay, day, shortId);
+                addUniqueUserPerWeek(controlUniquePerWeek, week, shortId);
+            }
+
+        }
+
+        csvReader.close();
+
+    }
+
+    private static void addUniqueUser(HashMap<String, List<String>> uniquePerDay, String day, String shortId) {
+        List<String> uniqueUsers = uniquePerDay.get(day);
+
+        if (uniqueUsers == null) {
+            uniqueUsers = new ArrayList<>();
+            uniqueUsers.add(shortId);
+            uniquePerDay.put(day, uniqueUsers);
+        }
+        else if(!uniqueUsers.contains(shortId))
+            uniqueUsers.add(shortId);
+
+    }
+
+    private static void addUniqueUserPerWeek(HashMap<Integer, List<String>> uniquePerWeek, int week, String shortId) {
+        List<String> uniqueUsers = uniquePerWeek.get(week);
+
+        if (uniqueUsers == null) {
+            uniqueUsers = new ArrayList<>();
+            uniqueUsers.add(shortId);
+            uniquePerWeek.put(week, uniqueUsers);
+        }
+        else if(!uniqueUsers.contains(shortId))
+            uniqueUsers.add(shortId);
+    }
+
+    private static void writeUniqueUsersPerWeek(HashMap<Integer, List<String>> uniquePerWeek, String filename) throws IOException {
+        CSVWriter output = new CSVWriter(new FileWriter(filename), ',');
+        String[] toWrite;
+
+        toWrite = "Week#Count".split("#");
+
+        output.writeNext(toWrite);
+
+        for (Map.Entry<Integer, List<String>> entry : uniquePerWeek.entrySet()) {
+            toWrite = (entry.getKey() + "#" + entry.getValue().size()).split("#");
+            output.writeNext(toWrite);
+        }
+
+        output.close();
+    }
+
+    private static void writeUniqueUsersPerDay(HashMap<String, List<String>> uniquePerDay, String filename) throws IOException {
+        CSVWriter output = new CSVWriter(new FileWriter(filename), ',');
+        String[] toWrite;
+
+        toWrite = "Day#Count".split("#");
+
+        output.writeNext(toWrite);
+
+        for (Map.Entry<String, List<String>> entry : uniquePerDay.entrySet()) {
+            toWrite = (entry.getKey() + "#" + entry.getValue().size()).split("#");
+            output.writeNext(toWrite);
+        }
+
+        output.close();
+    }
+
 
     //************************
     //************ Utils
@@ -906,4 +1030,29 @@ public class PostDataAnalysis {
         return format.parse(dateString);
     }
 
+    private static int getWeekFromDate(String date) {
+        if(date.compareTo("2016-01-12") >= 0 && date.compareTo("2016-01-19") < 0)
+            return 1;
+        if(date.compareTo("2016-01-19") >= 0 && date.compareTo("2016-01-26") < 0)
+            return 2;
+        if(date.compareTo("2016-01-26") >= 0 && date.compareTo("2016-02-02") < 0)
+            return 3;
+        if(date.compareTo("2016-02-02") >= 0 && date.compareTo("2016-02-09") < 0)
+            return 4;
+        if(date.compareTo("2016-02-09") >= 0 && date.compareTo("2016-02-16") < 0)
+            return 5;
+        if(date.compareTo("2016-02-16") >= 0 && date.compareTo("2016-02-23") < 0)
+            return 6;
+        if(date.compareTo("2016-02-23") >= 0 && date.compareTo("2016-03-01") < 0)
+            return 7;
+        if(date.compareTo("2016-03-01") >= 0 && date.compareTo("2016-03-08") < 0)
+            return 8;
+        if(date.compareTo("2016-03-08") >= 0 && date.compareTo("2016-03-15") < 0)
+            return 9;
+        if(date.compareTo("2016-03-15") >= 0 && date.compareTo("2016-03-22") < 0)
+            return 10;
+        if(date.compareTo("2016-03-22") >= 0 && date.compareTo("2016-03-29") < 0)
+            return 11;
+        return 99;
+    }
 }
