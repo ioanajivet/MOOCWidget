@@ -2,6 +2,8 @@
  * Created by Ioana on 3/1/2016.
  */
 
+
+import analysis.UserForDataAnalysis;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 
@@ -12,7 +14,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-public class PostDataAnalysis {
+public class Averages {
 
     static HashMap<String, UserForGraphGeneration> testGroup;
     static HashMap<String, UserForGraphGeneration> controlGroup;
@@ -29,47 +31,64 @@ public class PostDataAnalysis {
     static HashMap<Integer, List<String>> testUniquePerWeek;
     static HashMap<Integer, List<String>> controlUniquePerWeek;
 
-    static double[] thresholds;
+    static List<String> activeTestUserIds;
+    static List<String> activeControlUserIds;
+
+    static HashMap<String, UserForDataAnalysis> testGroup;
+    static HashMap<String, UserForDataAnalysis> controlGroup;
 
     public static void main(String[] args) throws IOException, ParseException {
         int endWeek = 7;
 
         initialize();
 
-        //** Average for indicators
+
+//** Average for indicators
         //readUsers();
         //readMetrics("data\\2016\\user_metrics\\");
         //writeMetrics(endWeek);
         //analyseMetrics(endWeek);
 
-        //** Engagement
+
+//** Engagement
         //lastSession(endWeek);
         //uniqueUsers(endWeek);
 
-        //** Threshold Comparison
+//** Threshold Comparison
+        //selectActiveUsers(endWeek);
+        readActiveUsers();
+
+
+    }
+
+    private static void readActiveUsers() {
 
     }
 
 
 
-    //************************
-    //************ Loading data
+
+//************************
+//************ Loading data
 
     private static void initialize() {
         testGroup = new HashMap<>();
         controlGroup = new HashMap<>();
 
-        testGroupSession = new HashMap<>();
-        controlGroupSession = new HashMap<>();
+        //testGroupSession = new HashMap<>();
+        //controlGroupSession = new HashMap<>();
 
-        testAggregatedSessions = new HashMap<>();
-        controlAggregatedSessions = new HashMap<>();
+        //testAggregatedSessions = new HashMap<>();
+        //controlAggregatedSessions = new HashMap<>();
 
-        testUniquePerDay = new HashMap<>();
-        controlUniquePerDay = new HashMap<>();
+        //testUniquePerDay = new HashMap<>();
+        //controlUniquePerDay = new HashMap<>();
 
-        testUniquePerWeek = new HashMap<>();
-        controlUniquePerWeek = new HashMap<>();
+        //testUniquePerWeek = new HashMap<>();
+        //controlUniquePerWeek = new HashMap<>();
+
+        //activeTestUserIds = new ArrayList<>();
+        //activeControlUserIds = new ArrayList<>();
     }
 
     private static void readUsers() throws IOException {
@@ -1020,8 +1039,10 @@ public class PostDataAnalysis {
     }
 
 
-    //************************
-    //************ Utils
+    //========= Threshold Comparison ==========
+
+//************************
+//************ Utils
 
     private static Date getDateFromString(String dateString) throws ParseException {
         //input date: "2014-11-11 12:00:00"
