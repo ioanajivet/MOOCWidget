@@ -28,22 +28,13 @@ public class ScalingComputation {
     static HashMap<String, Integer> scaledAssignments;
     static HashMap<String, Integer> scaledDeadlines;
 
-   /*     public static void main(String[] args) throws IOException,ParseException
+        public static void main(String[] args) throws IOException,ParseException
         {
-            int week = 7;
+            int week = 9;
 
-            initialize();
+            scalingComputation(week);
 
-            readMetrics(week, "data\\2016\\user_metrics\\");
-
-            readMaximums(week, "data\\thresholds\\maximum5.csv");
-            readScaledThresholds(week, "data\\thresholds\\scaled_thresholds5.csv");
-
-            scaleMetrics(week);
-
-            writeScaledMetrics(week, "data\\2016\\user_metrics\\scaled_metrics");
-
-        }*/
+        }
 
     public static void scalingComputation(int week) throws IOException {
         initialize();
@@ -56,6 +47,7 @@ public class ScalingComputation {
         scaleMetrics(week);
 
         writeScaledMetrics(week, "data\\2016\\user_metrics\\scaled_metrics");
+        writeScaledMetricsNonAnon(week, "data\\2016\\user_metrics\\non_anon_scaled_metrics");
     }
 
     //************************
@@ -163,6 +155,42 @@ public class ScalingComputation {
 
             if(toWrite[0] == null)
                continue;
+
+            toWrite[1] = String.valueOf(scaledWeeklyTimes.get(current));
+            toWrite[2] = String.valueOf(scaledVideoTimes.get(current));
+            toWrite[3] = String.valueOf(scaledRatio.get(current));
+            toWrite[4] = String.valueOf(scaledVideos.get(current));
+            toWrite[5] = String.valueOf(scaledAssignments.get(current));
+            toWrite[6] = String.valueOf(scaledDeadlines.get(current));
+
+            output.writeNext(toWrite);
+        }
+
+        output.close();
+    }
+
+    private static void writeScaledMetricsNonAnon(int week, String filename) throws IOException {
+        CSVWriter output = new CSVWriter(new FileWriter(filename + week + ".csv"), ',');
+        String[] toWrite;
+        String current;
+
+        toWrite = "User_id#Time on platform#Time on videos#Ratio video/platform#Distict videos#Assignments#Until deadline".split("#");
+
+        output.writeNext(toWrite);
+
+        //write thresholds on line 2
+        current = "Thresholds";
+        for(int i = 0; i < 6; i++)
+            current += "#" + thresholds[i];
+
+        output.writeNext(current.split("#"));
+
+        for (Map.Entry<String, UserForGraphGeneration> entry : users.entrySet()) {
+            current = entry.getKey();
+            toWrite[0] = current;
+
+            if(toWrite[0] == null)
+                continue;
 
             toWrite[1] = String.valueOf(scaledWeeklyTimes.get(current));
             toWrite[2] = String.valueOf(scaledVideoTimes.get(current));

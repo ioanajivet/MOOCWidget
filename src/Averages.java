@@ -34,8 +34,8 @@ public class Averages {
     static List<String> activeTestUserIds;
     static List<String> activeControlUserIds;
 
-    static HashMap<String, UserForDataAnalysis> testGroup;
-    static HashMap<String, UserForDataAnalysis> controlGroup;
+   // static HashMap<String, UserForDataAnalysis> testGroup;
+    //static HashMap<String, UserForDataAnalysis> controlGroup;
 
     public static void main(String[] args) throws IOException, ParseException {
         int endWeek = 7;
@@ -56,13 +56,58 @@ public class Averages {
 
 //** Threshold Comparison
         //selectActiveUsers(endWeek);
-        readActiveUsers();
-
+        readActive(endWeek);
+        readMetrics("data\\2016\\user_metrics\\");
+        //writeMetrics(endWeek, "data\\2016\\post-data\\active\\");
+        writeMetricsForWeek(endWeek, "data\\2016\\post-data\\");
 
     }
 
-    private static void readActiveUsers() {
+    private static void writeMetricsForWeek(int endWeek, String filepath) throws IOException {
+        writeMetricsForWeekUsers(testGroup, endWeek, filepath + "total_active_test_" + endWeek + ".csv");
+        writeMetricsForWeekUsers(controlGroup, endWeek, filepath + "total_active_control_" + endWeek + ".csv");
+    }
 
+    private static void writeMetricsForWeekUsers(HashMap<String, UserForGraphGeneration> users, int endWeek, String filename) throws IOException {
+        CSVWriter output = new CSVWriter(new FileWriter(filename), ',');
+        String[] toWrite;
+        UserForGraphGeneration current;
+
+        toWrite = "User_id#Time on platform#Time on videos#Ratio video/platform#Distict videos#Assignments#Until deadline".split("#");
+
+        output.writeNext(toWrite);
+
+        for (Map.Entry<String, UserForGraphGeneration> entry : users.entrySet()) {
+            current = entry.getValue();
+            toWrite[0] = entry.getKey();
+
+            toWrite[1] = String.valueOf(current.getPlatformTime(endWeek));
+            toWrite[2] = String.valueOf(current.getVideoTime(endWeek));
+            toWrite[3] = String.format("%.2f", current.getRatioTime(endWeek));
+            toWrite[4] = String.valueOf(current.getDistinctVideos(endWeek));
+            toWrite[5] = String.valueOf(current.getAssignments(endWeek));
+            toWrite[6] = String.valueOf(current.getUntilDeadline(endWeek));
+
+            output.writeNext(toWrite);
+        }
+        output.close();
+    }
+
+    private static void readActive(int endWeek) throws IOException {
+        readActiveUsers(testGroup, "data\\2016\\post-data\\threshold_comparison\\active_test_" + endWeek + ".csv");
+        readActiveUsers(controlGroup, "data\\2016\\post-data\\threshold_comparison\\active_control_" + endWeek + ".csv");
+    }
+
+    private static void readActiveUsers(HashMap<String, UserForGraphGeneration> group, String filepath) throws IOException {
+        CSVReader csvReader = new CSVReader(new FileReader(filepath));
+        String[] nextLine;
+
+        csvReader.readNext();
+
+        while ((nextLine = csvReader.readNext()) != null)
+            group.put(nextLine[0], new UserForGraphGeneration(nextLine[0]));
+
+        csvReader.close();
     }
 
 
@@ -154,6 +199,9 @@ public class Averages {
             else
                 current = controlGroup.get(shortId);
 
+            if(current == null)
+                continue;
+
             current.setPlatformTime(week, Integer.parseInt(nextLine[1]));
             current.setVideoTime(week, Integer.parseInt(nextLine[2]));
             current.setRatioTime(week, Double.parseDouble(nextLine[3]));
@@ -182,24 +230,24 @@ public class Averages {
 
     }
 
-    private static void writeMetrics(int endWeek) throws IOException {
-        writePlatformTime(testGroup, "data\\2016\\post-data\\test_after_week" + endWeek + "_platformTime.csv", endWeek);
-        writePlatformTime(controlGroup, "data\\2016\\post-data\\control_after_week" + endWeek + "_platformTime.csv", endWeek);
+    private static void writeMetrics(int endWeek, String filepath) throws IOException {
+        writePlatformTime(testGroup, filepath + "test_after_week" + endWeek + "_platformTime.csv", endWeek);
+        writePlatformTime(controlGroup, filepath + "control_after_week" + endWeek + "_platformTime.csv", endWeek);
 
-        writeVideoTime(testGroup, "data\\2016\\post-data\\test_after_week" + endWeek + "_videoTime.csv", endWeek);
-        writeVideoTime(controlGroup, "data\\2016\\post-data\\control_after_week" + endWeek + "_videoTime.csv", endWeek);
+        writeVideoTime(testGroup, filepath + "test_after_week" + endWeek + "_videoTime.csv", endWeek);
+        writeVideoTime(controlGroup, filepath + "control_after_week" + endWeek + "_videoTime.csv", endWeek);
 
-        writeRatioTime(testGroup, "data\\2016\\post-data\\test_after_week" + endWeek + "_ratioTime.csv", endWeek);
-        writeRatioTime(controlGroup, "data\\2016\\post-data\\control_after_week" + endWeek + "_ratioTime.csv", endWeek);
+        writeRatioTime(testGroup, filepath + "test_after_week" + endWeek + "_ratioTime.csv", endWeek);
+        writeRatioTime(controlGroup, filepath + "control_after_week" + endWeek + "_ratioTime.csv", endWeek);
 
-        writeVideos(testGroup, "data\\2016\\post-data\\test_after_week" + endWeek + "_videos.csv", endWeek);
-        writeVideos(controlGroup, "data\\2016\\post-data\\control_after_week" + endWeek + "_videos.csv", endWeek);
+        writeVideos(testGroup, filepath + "test_after_week" + endWeek + "_videos.csv", endWeek);
+        writeVideos(controlGroup, filepath + "control_after_week" + endWeek + "_videos.csv", endWeek);
 
-        writeAssignments(testGroup, "data\\2016\\post-data\\test_after_week" + endWeek + "_assignments.csv", endWeek);
-        writeAssignments(controlGroup, "data\\2016\\post-data\\control_after_week" + endWeek + "_assignments.csv", endWeek);
+        writeAssignments(testGroup, filepath + "test_after_week" + endWeek + "_assignments.csv", endWeek);
+        writeAssignments(controlGroup, filepath + "control_after_week" + endWeek + "_assignments.csv", endWeek);
 
-        writeUntilDeadline(testGroup, "data\\2016\\post-data\\test_after_week" + endWeek + "_untilDeadline.csv", endWeek);
-        writeUntilDeadline(controlGroup, "data\\2016\\post-data\\control_after_week" + endWeek + "_untilDeadline.csv", endWeek);
+        writeUntilDeadline(testGroup, filepath + "test_after_week" + endWeek + "_untilDeadline.csv", endWeek);
+        writeUntilDeadline(controlGroup, filepath + "control_after_week" + endWeek + "_untilDeadline.csv", endWeek);
     }
 
     private static void writePlatformTimeAnalysis(CSVWriter output, int endWeek) {

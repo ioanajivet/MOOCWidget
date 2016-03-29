@@ -54,10 +54,12 @@ public class UserForDataAnalysis {
     }
 
     public int getPlatformTime(int week){
+
         return weeklyPlatformTimes.get(week);
     }
 
     public int getVideoTime(int week){
+
         return weeklyVideoTimes.get(week);
     }
 

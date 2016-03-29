@@ -30,15 +30,9 @@ public class MetricComputation {
 
         public static void main(String[] args) throws IOException,ParseException
         {
-            //int week = Integer.parseInt(args[0]);
-            int week = 2;
+            int week = 9;
 
-            initialize();
-            generateMetrics(week);
-
-           // for(int i = 1; i < 12; i++)
-         //   writeMetrics("data\\2016\\user_metrics\\metrics" + week + ".csv", week);
-            writeMetrics("data\\2016\\user_metrics\\metrics" + 1 + ".csv", 1);
+            metricComputation(week);
 
         }
 
