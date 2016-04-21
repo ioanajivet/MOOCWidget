@@ -10,17 +10,18 @@ public class MainST {
 
     public static void main(String[] args) throws IOException, ParseException {
 
-        int weekMax = 10;
-        int week = 1;
         //Compute thresholds for 2015
+        //int weekMax = 10;
         //for(int i = 1; i <= weekMax; i++)
         //    MetricComputation.computeMetrics2015(i);
         //ThresholdComputation.computeThresholds();
 
         //Compute metrics for 2016
-        MetricComputation.computeMetrics(week);
+        int week = 1;
+        //MetricComputation.computeMetrics(week);
+        //ScalingComputation.scalingMetrics(week);
 
-        //ScriptGeneration.generateScripts();
+        ScriptGeneration.generateScripts(week);
 
     }
 }

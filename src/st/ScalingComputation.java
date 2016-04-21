@@ -4,328 +4,173 @@ package st; /**
 
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
-import dwt.UserForGraphGeneration;
 
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.ParseException;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 //TODO: check file paths for file read and generation so they don't overwrite stuff
 //TODO: check consistency of week numbering: starting with 0 or with 1
+
+
 public class ScalingComputation {
 
-    static HashMap<String, UserForGraphGeneration> users;
-    static int[] thresholds;
-    static double[] maximums;
 
-    static int[] maximumAssignments;
-    static int[] maximumVideos;
 
-    static HashMap<String, Integer> scaledWeeklyTimes;
-    static HashMap<String, Integer> scaledVideoTimes;
-    static HashMap<String, Integer> scaledRatio;
-    static HashMap<String, Integer> scaledVideos;
-    static HashMap<String, Integer> scaledAssignments;
-    static HashMap<String, Integer> scaledDeadlines;
+    private static HashMap<String, User> users;
+    private static int[] maximums;
 
         public static void main(String[] args) throws IOException,ParseException
         {
-            int week = 9;
+            int week = 1;
 
-            scalingComputation(week);
+            scalingMetrics(week);
 
         }
 
-    public static void scalingComputation(int week) throws IOException {
+    private static void initialize() {
+        users = new HashMap<>();
+        maximums = new int[6];
+
+    }
+
+    public static void scalingMetrics(int week) throws IOException {
         initialize();
 
-        readMetrics(week, "data\\2016\\user_metrics\\");
+        readMetrics("data\\st\\2016\\week" + week + "\\metrics\\ST2015_metrics.csv");
+        readMaximums(week, "data\\st\\thresholds\\maximum5.csv");
+        //getMaximums();
 
-        readMaximums(week, "data\\thresholds\\maximum5.csv");
-        readScaledThresholds(week, "data\\thresholds\\scaled_thresholds5.csv");
-
-        scaleMetrics(week);
-
-        writeScaledMetrics(week, "data\\2016\\user_metrics\\scaled_metrics");
-        writeScaledMetricsNonAnon(week, "data\\2016\\user_metrics\\non_anon_scaled_metrics");
+        writeScaledMetrics("data\\st\\2016\\week" + week + "\\metrics\\scaled_ST2015_metrics.csv");
     }
 
     //************************
     //************ Loading data
 
-    private static void readMetrics(int week, String filepath) throws IOException {
-        CSVReader csvReader = new CSVReader(new FileReader(filepath + "metrics" + week + ".csv"));
+    private static void readMetrics(String filepath) throws IOException {
+        CSVReader csvReader = new CSVReader(new FileReader(filepath));
         String [] nextLine;
-        String shortId;
+        String id;
 
         csvReader.readNext();
 
         while ((nextLine = csvReader.readNext()) != null) {
-            shortId = nextLine[0].substring(nextLine[0].indexOf("1T2016_") + 7);
+            id = nextLine[0];
 
-            if(Integer.parseInt(shortId) % 2 == 1 && shortId.compareTo("7538013") !=0 && shortId.compareTo("7592701") != 0)
-                continue;
+            User current = new User(id);
 
-            UserForGraphGeneration current = new UserForGraphGeneration(shortId);
+            current.sessionsPerWeek = Integer.parseInt(nextLine[1]);
+            current.lengthOfSession = Integer.parseInt(nextLine[2]);
+            current.betweenSessions = Integer.parseInt(nextLine[3]);
+            current.forumSessions = Integer.parseInt(nextLine[4]);
+            current.assignments = Integer.parseInt(nextLine[5]);
+            current.timeliness = Integer.parseInt(nextLine[6]);
 
-            current.setPlatformTime(week, Integer.parseInt(nextLine[1]));
-            current.setVideoTime(week, Integer.parseInt(nextLine[2]));
-            current.setRatioTime(week, Double.parseDouble(nextLine[3]));
-            current.setDistinctVideos(week, Integer.parseInt(nextLine[4]));
-            current.setAssignments(week, Integer.parseInt(nextLine[5]));
-            current.setUntilDeadline(week, Integer.parseInt(nextLine[6]));
+            users.put(id, current);
 
-            users.put(shortId, current);
-
-            if(Integer.parseInt(nextLine[5]) > maximumAssignments[week-1])
-                maximumAssignments[week-1] = Integer.parseInt(nextLine[5]);
         }
 
         csvReader.close();
 
-        System.out.println("Maximum Assignments for week " + week + ": " + maximumAssignments[week-1]);
-
-        readAnonymizedIds();
-
-    }
-
-    private static void readAnonymizedIds() throws IOException {
-        CSVReader csvReader = new CSVReader(new FileReader("data\\2016\\anon-ids.csv"));
-        String [] nextLine;
-
-        csvReader.readNext();
-
-        while ((nextLine = csvReader.readNext()) != null) {
-            if(users.containsKey(nextLine[0]))
-                users.get(nextLine[0]).setAnonymousId(nextLine[1]);
-        }
-
-        csvReader.close();
-    }
-
-    private static void readScaledThresholds(int week, String filename) throws IOException {
-        CSVReader csvReader = new CSVReader(new FileReader(filename));
-        String [] nextLine;
-        int i = 0;
-
-        csvReader.readNext();
-
-        while ((nextLine = csvReader.readNext()) != null) {
-            thresholds[i++] = Integer.parseInt(nextLine[week]);
-        }
-
-        csvReader.close();
     }
 
     private static void readMaximums(int week, String filename) throws IOException {
         CSVReader csvReader = new CSVReader(new FileReader(filename));
         String [] nextLine;
-        int i = 0;
+        int line = 1;
 
         csvReader.readNext();
 
-        while ((nextLine = csvReader.readNext()) != null) {
-            maximums[i++] = Double.parseDouble(nextLine[week]);
-        }
+        while ((nextLine = csvReader.readNext()) != null && line < week);
+
+        for(int i = 0; i < 6; i++)
+            maximums[i] = Integer.parseInt(nextLine[i+1]);
 
         csvReader.close();
     }
     //************************
     //************ Writing data
 
-    private static void writeScaledMetrics(int week, String filename) throws IOException {
-        CSVWriter output = new CSVWriter(new FileWriter(filename + week + ".csv"), ',');
+    private static void writeScaledMetrics(String filename) throws IOException {
+        CSVWriter output = new CSVWriter(new FileWriter(filename), ',');
         String[] toWrite;
-        String current;
+        User current;
+        double[] scaled = new double[6];
 
-        toWrite = "User_id#Time on platform#Time on videos#Ratio video/platform#Distict videos#Assignments#Until deadline".split("#");
-
+        toWrite = "User_id#Sessions/week#Length of session#Between sessions#Forum sessions#Assignments#Until deadline".split("#");
         output.writeNext(toWrite);
 
-        //write thresholds on line 2
-        current = "Thresholds";
-        for(int i = 0; i < 6; i++)
-            current += "#" + thresholds[i];
-
-        output.writeNext(current.split("#"));
-
-        for (Map.Entry<String, UserForGraphGeneration> entry : users.entrySet()) {
-            current = entry.getKey();
-            toWrite[0] = entry.getValue().getAnonymousId();
-
-            if(toWrite[0] == null)
-               continue;
-
-            toWrite[1] = String.valueOf(scaledWeeklyTimes.get(current));
-            toWrite[2] = String.valueOf(scaledVideoTimes.get(current));
-            toWrite[3] = String.valueOf(scaledRatio.get(current));
-            toWrite[4] = String.valueOf(scaledVideos.get(current));
-            toWrite[5] = String.valueOf(scaledAssignments.get(current));
-            toWrite[6] = String.valueOf(scaledDeadlines.get(current));
-
-            output.writeNext(toWrite);
-        }
-
-        output.close();
-    }
-
-    private static void writeScaledMetricsNonAnon(int week, String filename) throws IOException {
-        CSVWriter output = new CSVWriter(new FileWriter(filename + week + ".csv"), ',');
-        String[] toWrite;
-        String current;
-
-        toWrite = "User_id#Time on platform#Time on videos#Ratio video/platform#Distict videos#Assignments#Until deadline".split("#");
-
-        output.writeNext(toWrite);
-
-        //write thresholds on line 2
-        current = "Thresholds";
-        for(int i = 0; i < 6; i++)
-            current += "#" + thresholds[i];
-
-        output.writeNext(current.split("#"));
-
-        for (Map.Entry<String, UserForGraphGeneration> entry : users.entrySet()) {
-            current = entry.getKey();
-            toWrite[0] = current;
-
-            if(toWrite[0] == null)
-                continue;
-
-            toWrite[1] = String.valueOf(scaledWeeklyTimes.get(current));
-            toWrite[2] = String.valueOf(scaledVideoTimes.get(current));
-            toWrite[3] = String.valueOf(scaledRatio.get(current));
-            toWrite[4] = String.valueOf(scaledVideos.get(current));
-            toWrite[5] = String.valueOf(scaledAssignments.get(current));
-            toWrite[6] = String.valueOf(scaledDeadlines.get(current));
-
-            output.writeNext(toWrite);
-        }
-
-        output.close();
-    }
-
-    //************************
-    //************ Computations
-
-    private static void scaleMetrics(int week){
-        scalePlatformTime(week);
-        scaleVideoTime(week);
-        scaleRatioTime(week);
-        scaleVideos(week);
-        scaleAssignments(week);
-        scaleUntilDeadline(week);
-    }
-
-    private static void scalePlatformTime(int week){
-        int weekTime;
-        UserForGraphGeneration current;
-        int scaledValue;
-
-        for (Map.Entry<String, UserForGraphGeneration> entry : users.entrySet()) {
+        for (Map.Entry<String, User> entry : users.entrySet()) {
             current = entry.getValue();
-            weekTime = current.getPlatformTime(week);
-            scaledValue = (int) Math.round(weekTime*10.0/maximums[0]);
 
-            scaledWeeklyTimes.put(entry.getKey(), regularized(scaledValue));
-        }
-    }
-
-    private static int regularized(int scaledValue) {
-        if (scaledValue > 10)
-            return 10;
-        return scaledValue;
-    }
-
-    private static void scaleVideoTime(int week){
-        int videoTime, scaledValue;
-        UserForGraphGeneration current;
-
-        for (Map.Entry<String, UserForGraphGeneration> entry : users.entrySet()) {
-            current = entry.getValue();
-            videoTime = current.getVideoTime(week);
-            scaledValue = (int) Math.round(videoTime*10.0/maximums[1]);
-
-            scaledVideoTimes.put(entry.getKey(), regularized(scaledValue));
-        }
-    }
-
-    private static void scaleRatioTime(int week){
-        double ratio;
-        UserForGraphGeneration current;
-        int scaledValue;
-
-        for (Map.Entry<String, UserForGraphGeneration> entry : users.entrySet()) {
-            current = entry.getValue();
-            ratio = current.getRatioTime(week);
-            scaledValue = (int) Math.round(ratio*10.0/maximums[2]);
-            scaledRatio.put(entry.getKey(), regularized(scaledValue));
-        }
-    }
-
-    private static void scaleVideos(int week){
-        int videos;
-        UserForGraphGeneration current;
-        int scaledValue;
-
-        for (Map.Entry<String, UserForGraphGeneration> entry : users.entrySet()) {
-            current = entry.getValue();
-            videos = current.getDistinctVideos(week);
-            scaledValue = (int) Math.round(videos*10.0/maximums[3]);
-            scaledVideos.put(entry.getKey(), regularized(scaledValue));
-        }
-    }
-
-    private static void scaleAssignments(int week){
-        int assignments;
-        UserForGraphGeneration current;
-        int scaledValue;
-
-        for (Map.Entry<String, UserForGraphGeneration> entry : users.entrySet()) {
-            current = entry.getValue();
-            assignments = current.getAssignments(week);
-            if(maximumAssignments[week-1] == 0)
-                scaledValue = 0;
+            scaled[0] = current.sessionsPerWeek * 10.0 / maximums[0];
+            scaled[1] = current.lengthOfSession * 10.0 / maximums[1];
+            if(current.betweenSessions == -1)
+                scaled[2] = 0;
             else
-                scaledValue = (int) Math.round(assignments*10.0/maximumAssignments[week-1]);
-            scaledAssignments.put(entry.getKey(), regularized(scaledValue));
+                scaled[2] = current.betweenSessions * 10.0 / maximums[2];
+            scaled[3] = current.forumSessions * 10.0/ maximums[3];
+            scaled[4] = current.assignments * 10.0 / maximums[4];
+            scaled[5] = current.timeliness * 10.0 / maximums[5];
+
+            toWrite[0] = entry.getKey();
+
+            for(int i = 0 ; i < 6; i++)
+                if (Double.isNaN(scaled[i]))
+                    toWrite[i+1] = "0";
+                else if(scaled[i] > 10)
+                    toWrite[i+1] = "10";
+                else
+                    toWrite[i+1] = String.format("%.1f", scaled[i]);
+
+            output.writeNext(toWrite);
         }
+
+        output.close();
     }
 
-    private static void scaleUntilDeadline(int week){
-        long untilDeadline;
-        UserForGraphGeneration current;
-        int scaledValue;
-
-        for (Map.Entry<String, UserForGraphGeneration> entry : users.entrySet()) {
-            current = entry.getValue();
-            untilDeadline = current.getUntilDeadline(week);
-            scaledValue = (int) Math.round(untilDeadline*10.0/maximums[5]);
-            scaledDeadlines.put(entry.getKey(), regularized(scaledValue));
-        }
+    private static void getMaximums() {
+        maximums[0] = users.values().stream().mapToInt(e -> e.sessionsPerWeek).max().getAsInt();
+        maximums[1] = users.values().stream().mapToInt(e -> e.lengthOfSession).max().getAsInt();
+        maximums[2] = users.values().stream().mapToInt(e -> e.betweenSessions).max().getAsInt();
+        maximums[3] = users.values().stream().mapToInt(e -> e.forumSessions).max().getAsInt();
+        maximums[4] = users.values().stream().mapToInt(e -> e.assignments).max().getAsInt();
+        maximums[5] = users.values().stream().mapToInt(e -> e.timeliness).max().getAsInt();
     }
 
-    //************************
-    //************ Utils
+}
 
-    private static void initialize() {
-        users = new HashMap<>();
-        thresholds = new int[6];
-        maximums = new double[6];
+class User {
+    public String id;
 
-        maximumAssignments = new int[11];
-        maximumVideos = new int[11];
+    public int sessionsPerWeek;
+    public int lengthOfSession;
+    public int betweenSessions;
+    public int forumSessions;
+    public int assignments;
+    public int timeliness;
 
-        scaledWeeklyTimes = new HashMap<>();
-        scaledVideoTimes = new HashMap<>();
-        scaledRatio = new HashMap<>();
-        scaledVideos = new HashMap<>();
-        scaledAssignments = new HashMap<>();
-        scaledDeadlines = new HashMap<>();
+    public int[] values;
 
+    public User(String id, int sessionsPerWeek, int lengthOfSession, int betweenSessions, int forumSessions, int assignments, int timeliness) {
+        this.id = id;
+        this.sessionsPerWeek = sessionsPerWeek;
+        this.lengthOfSession = lengthOfSession;
+        this.betweenSessions = betweenSessions;
+        this.forumSessions = forumSessions;
+        this.assignments = assignments;
+        this.timeliness = timeliness;
+
+        values = new int[6];
     }
 
+    public User (String id) {
+        this.id = id;
+        values = new int[6];
+    }
 }

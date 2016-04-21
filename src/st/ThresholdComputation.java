@@ -28,7 +28,7 @@ public class ThresholdComputation {
 
     public static void computeThresholds() throws IOException, ParseException {
 
-        int cutOffPercent = 10;
+        int cutOffPercent = 5;
 
         initialize();
         readMetrics("data\\st\\2015\\output\\ST2015_metrics_");
@@ -149,18 +149,18 @@ public class ThresholdComputation {
 
         for(int i = 1; i < 11; i++) {
             toWrite[0] = "Week " + i;
-            toWrite[1] = String.valueOf(Math.round(getAverage(weeklySessionsPerWeek.get(i), cutOffPercent) * 10.0
-                    / getMaximum(weeklySessionsPerWeek.get(i), cutOffPercent)));
-            toWrite[2] = String.valueOf(Math.round(getAverage(weeklySessionLength.get(i), cutOffPercent) * 10.0
-                    / getMaximum(weeklySessionLength.get(i), cutOffPercent)));
-            toWrite[3] = String.valueOf(Math.round(getAverage(weeklyBetweenSessions.get(i), cutOffPercent) * 10.0
-                    / getMaximum(weeklyBetweenSessions.get(i), cutOffPercent)));
-            toWrite[4] = String.valueOf(Math.round(getAverage(weeklyForumSessions.get(i), cutOffPercent) * 10.0
-                    / getMaximum(weeklyForumSessions.get(i), cutOffPercent)));
-            toWrite[5] = String.valueOf(Math.round(getAverage(weeklyAssignments.get(i), cutOffPercent) * 10.0
-                    / getMaximum(weeklyAssignments.get(i), cutOffPercent)));
-            toWrite[6] = String.valueOf(Math.round(getAverage(weeklyUntilDeadline.get(i), cutOffPercent) * 10.0
-                    / getMaximum(weeklyUntilDeadline.get(i), cutOffPercent)));
+            toWrite[1] = String.format("%.1f", getAverage(weeklySessionsPerWeek.get(i), cutOffPercent) * 10.0
+                    / getMaximum(weeklySessionsPerWeek.get(i), cutOffPercent));
+            toWrite[2] = String.format("%.1f", getAverage(weeklySessionLength.get(i), cutOffPercent) * 10.0
+                    / getMaximum(weeklySessionLength.get(i), cutOffPercent));
+            toWrite[3] = String.format("%.1f", getAverage(weeklyBetweenSessions.get(i), cutOffPercent) * 10.0
+                    / getMaximum(weeklyBetweenSessions.get(i), cutOffPercent));
+            toWrite[4] = String.format("%.1f", getAverage(weeklyForumSessions.get(i), cutOffPercent) * 10.0
+                    / getMaximum(weeklyForumSessions.get(i), cutOffPercent));
+            toWrite[5] = String.format("%.1f", getAverage(weeklyAssignments.get(i), cutOffPercent) * 10.0
+                    / getMaximum(weeklyAssignments.get(i), cutOffPercent));
+            toWrite[6] = String.format("%.1f", getAverage(weeklyUntilDeadline.get(i), cutOffPercent) * 10.0
+                    / getMaximum(weeklyUntilDeadline.get(i), cutOffPercent));
 
             output.writeNext(toWrite);
         }
