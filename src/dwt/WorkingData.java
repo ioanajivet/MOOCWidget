@@ -1,4 +1,4 @@
-/**
+package dwt; /**
  * Created by Ioana on 3/1/2016.
  */
 
@@ -53,11 +53,11 @@ public class WorkingData {
         //writeNonGradedAssignments(endWeek, "data\\2016\\post-data\\non-graded_assignments_" + endWeek + ".csv");
 
         //5. Calculate non-graded assignments submitted for active users
-        //readActiveUsersAssignments(testAssignments,  "data\\2016\\post-data\\active_test_" + endWeek + ".csv");
-        //readActiveUsersAssignments(controlAssignments, "data\\2016\\post-data\\active_control_" + endWeek + ".csv");
-        //readProblems();
-        //readSubmissions(endWeek);
-        //writeNonGradedAssignments(endWeek, "data\\2016\\post-data\\non-graded_assignments_active_" + endWeek + ".csv");
+        readActiveUsersAssignments(testAssignments,  "data\\2016\\post-data\\all_metrics_test_5min_" + endWeek + ".csv");
+        readActiveUsersAssignments(controlAssignments, "data\\2016\\post-data\\all_metrics_control_5min_" + endWeek + ".csv");
+        readProblems();
+        readSubmissions(endWeek);
+        writeNonGradedAssignments(endWeek, "data\\2016\\post-data\\non-graded_assignments_active_" + endWeek + ".csv");
 
         //6. Number of sessions per week
         //selectActiveUsers(endWeek);
@@ -287,7 +287,7 @@ public class WorkingData {
 
         for (Map.Entry<String, List<String>> entry : testAssignments.entrySet()) {
             current = entry.getValue();
-            toWrite[0] = "Test " + entry.getKey();
+            toWrite[0] = "Test";
             toWrite[1] = String.valueOf(current.size());
 
             output.writeNext(toWrite);
@@ -295,7 +295,7 @@ public class WorkingData {
 
         for (Map.Entry<String, List<String>> entry : controlAssignments.entrySet()) {
             current = entry.getValue();
-            toWrite[0] = "Control " + entry.getKey();
+            toWrite[0] = "Control";
             toWrite[1] = String.valueOf(current.size());
 
             output.writeNext(toWrite);

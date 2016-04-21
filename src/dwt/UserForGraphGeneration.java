@@ -1,21 +1,22 @@
-package analysis;
+package dwt;
 
 import java.util.HashMap;
 
 /**
- * Created by Ioana on 3/3/2016.
+ * Created by Ioana on 1/16/2016.
  */
-public class UserForDataAnalysis {
+public class UserForGraphGeneration {
     private String id;
+    private String anonymousId;
 
     private HashMap<Integer, Integer> weeklyPlatformTimes;
     private HashMap<Integer, Integer> weeklyVideoTimes;
-    private HashMap<Integer, Integer> weeklyRatioTimes;
+    private HashMap<Integer, Double> weeklyRatioTimes;
     private HashMap<Integer, Integer> weeklyDistinctVideos;
     private HashMap<Integer, Integer> weeklyAssignments;
     private HashMap<Integer, Integer> weeklyUntilDeadline;
 
-    public UserForDataAnalysis(String id) {
+    public UserForGraphGeneration(String id) {
         this.id = id;
         weeklyPlatformTimes = new HashMap<>();
         weeklyVideoTimes = new HashMap<>();
@@ -23,6 +24,10 @@ public class UserForDataAnalysis {
         weeklyDistinctVideos = new HashMap<>();
         weeklyAssignments = new HashMap<>();
         weeklyUntilDeadline = new HashMap<>();
+    }
+
+    public void setAnonymousId(String anon){
+        this.anonymousId = anon;
     }
 
     public void setPlatformTime(int week, int time){
@@ -33,7 +38,7 @@ public class UserForDataAnalysis {
         weeklyVideoTimes.put(week, time);
     }
 
-    public void setRatioTime(int week, int ratio){
+    public void setRatioTime(int week, double ratio){
         weeklyRatioTimes.put(week, ratio);
     }
 
@@ -53,17 +58,19 @@ public class UserForDataAnalysis {
         return this.id;
     }
 
-    public int getPlatformTime(int week){
+    public String getAnonymousId(){
+        return this.anonymousId;
+    }
 
+    public int getPlatformTime(int week){
         return weeklyPlatformTimes.get(week);
     }
 
     public int getVideoTime(int week){
-
         return weeklyVideoTimes.get(week);
     }
 
-    public int getRatioTime(int week) {
+    public double getRatioTime(int week) {
         return weeklyRatioTimes.get(week);
     }
 

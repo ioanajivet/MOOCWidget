@@ -5,7 +5,7 @@
  * args[0] = week for which the metrics computation is done
  */
 
-package analysis;
+package dwt.analysis;
 
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
@@ -46,10 +46,10 @@ public class Engagement {
 
 
         //** Engagement
-        //lastSession(endWeek);
+        lastSession(endWeek);
         //uniqueUsers(endWeek);
         //lastActivity(endWeek);
-        lastActivityActiveUsers(endWeek);
+        //lastActivityActiveUsers(endWeek);
 
     }
 

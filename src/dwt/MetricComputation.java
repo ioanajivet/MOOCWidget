@@ -1,4 +1,4 @@
-/**
+package dwt; /**
  * Created by Ioana on 1/9/2016.
  *
  * Command line arguments:
@@ -8,9 +8,7 @@
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -21,7 +19,7 @@ import java.util.concurrent.TimeUnit;
 
 //TODO: check file paths for file read and generation so they don't overwrite stuff
 //TODO: check consistency of week numbering: starting with 0 or with 1
-public class MetricComputation2015 {
+public class MetricComputation {
 
     static HashMap<String, UserForMetricsComputation> users;
     static HashMap<Integer, ArrayList<String>> videosPerWeek;
@@ -32,15 +30,19 @@ public class MetricComputation2015 {
 
         public static void main(String[] args) throws IOException,ParseException
         {
+            int week = 9;
 
-            initialize();
-            generateMetrics();
-
-            //write metrics only for week 1
-            for(int i = 1; i < 12; i++)
-            writeMetrics("data\\2015\\user_metrics\\metrics" + i + ".csv", i);
+            metricComputation(week);
 
         }
+
+    public static void metricComputation(int week) throws ParseException, IOException {
+        initialize();
+        generateMetrics(week);
+
+        // for(int i = 1; i < 12; i++)
+        writeMetrics("data\\2016\\user_metrics\\metrics" + week + ".csv", week);
+    }
 
     private static void initialize() {
         users = new HashMap<>();
@@ -54,15 +56,15 @@ public class MetricComputation2015 {
 
     }
 
-    private static void generateMetrics() throws IOException, ParseException {
-        readUsersThreshold(0.6);
+    private static void generateMetrics(int week) throws IOException, ParseException {
 
+        readUsers();
         readVideosPublished();
         readProblems();
 
-        readSessions();
-        readObservations();
-        readSubmissions();
+        readSessions(week);
+        readObservations(week);
+        readSubmissions(week);
 
         cumulateMetrics();
 
@@ -111,23 +113,24 @@ public class MetricComputation2015 {
 
     //************************
     //************ Loading data
-    private static void readUsersThreshold(double threshold) throws IOException {
-        CSVReader csvReader = new CSVReader(new FileReader("data\\2015\\course_user.csv"));
+
+    private static void readUsers() throws IOException {
+        CSVReader csvReader = new CSVReader(new FileReader("data\\2016\\user_pii.csv"));
         String [] nextLine;
 
         csvReader.readNext();
 
         while ((nextLine = csvReader.readNext()) != null) {
-            if(Double.parseDouble(nextLine[1]) >= threshold)
-                users.put(nextLine[0], new UserForMetricsComputation(nextLine[0],nextLine[1]));
+            users.put(nextLine[0], new UserForMetricsComputation(nextLine[0]));
         }
 
+        System.out.println("Users read: " + users.size());
         csvReader.close();
 
     }
 
     private static void readVideosPublished() throws IOException {
-        CSVReader csvReader = new CSVReader(new FileReader("data\\2015\\resources.csv"));
+        CSVReader csvReader = new CSVReader(new FileReader("data\\2016\\resources.csv"));
         String [] nextLine;
         int week;
         String videoId;
@@ -138,7 +141,7 @@ public class MetricComputation2015 {
         while ((nextLine = csvReader.readNext()) != null) {
             if("video".compareTo(nextLine[1]) == 0) {
 
-                week = Integer.parseInt(nextLine[2]);
+                week = Integer.parseInt(nextLine[3]);
 
                 if (week > 11)
                     continue;
@@ -162,25 +165,28 @@ public class MetricComputation2015 {
 
     //todo check if both HashMaps are needed
     private static void readProblems() throws IOException, ParseException{
-        CSVReader csvReader = new CSVReader(new FileReader("data\\2015\\problems.csv"));
+        CSVReader csvReader = new CSVReader(new FileReader("data\\2016\\problems.csv"));
         String [] nextLine;
+        String problemId;
         int week;
 
         csvReader.readNext();
 
         while ((nextLine = csvReader.readNext()) != null) {
 
-            if(!nextLine[1].startsWith("Homework"))
+            if(!nextLine[1].startsWith("Weekly assessment"))
                 continue;
 
             week = Integer.parseInt(nextLine[3]) + 1;
 
-            problemsWeek.put(nextLine[0], week);
+            problemId = nextLine[0].substring(nextLine[0].indexOf("block@") + 6);
+
+            problemsWeek.put(problemId, week);
 
             if(!problemsPerWeek.containsKey(week))
                 problemsPerWeek.put(week, new ArrayList<>());
 
-            problemsPerWeek.get(week).add(nextLine[0]);
+            problemsPerWeek.get(week).add(problemId);
 
         }
 
@@ -189,9 +195,9 @@ public class MetricComputation2015 {
         System.out.println("Problems read: " + problemsWeek.size());
     }
 
-    private static void readSessions() throws IOException {
+    private static void readSessions(int weekToRead) throws IOException {
         //session_id, course_user_id, start_time, duration
-        CSVReader csvReader = new CSVReader(new FileReader("data\\2015\\sessions.csv"));
+        CSVReader csvReader = new CSVReader(new FileReader("data\\2016\\week" + weekToRead + "\\sessions.csv"));
         String[] nextLine;
         int duration, week;
 
@@ -200,7 +206,7 @@ public class MetricComputation2015 {
         while ((nextLine = csvReader.readNext()) != null) {
             if(users.containsKey(nextLine[1])) {
                 duration = Integer.parseInt(nextLine[3]);
-                week = getWeek2015(nextLine[2]);
+                week = getWeek(nextLine[2]);
                 users.get(nextLine[1]).addSessionTime(week, duration);
             }
         }
@@ -208,13 +214,13 @@ public class MetricComputation2015 {
         csvReader.close();
     }
 
-    private static void readSubmissions() throws IOException,ParseException {
-        CSVReader csvReader = new CSVReader(new FileReader("data\\2015\\submissions.csv"));
+    private static void readSubmissions(int weekToRead) throws IOException,ParseException {
+        CSVReader csvReader = new CSVReader(new FileReader("data\\2016\\week" + weekToRead + "\\submissions.csv"));
         String [] nextLine;
         UserForMetricsComputation user;
         int week;
         long hours;
-        String submissionTime;
+        String submissionTime, problemId;
         int sub = 0;
 
         csvReader.readNext();
@@ -225,16 +231,20 @@ public class MetricComputation2015 {
             if (user == null)    //user are not in the test base -> ignore submission
                 continue;
 
-            if(!problemsWeek.containsKey(nextLine[2]))   //ignore problems that are not graded
+            problemId = nextLine[2].substring(nextLine[2].indexOf("block@") + 6);
+
+            if(!problemsWeek.containsKey(problemId))   //ignore problems that are not graded
                 continue;
 
             sub++;
 
-            week = problemsWeek.get(nextLine[2]);
+            week = problemsWeek.get(problemId);
             submissionTime = nextLine[3].substring(0, 22);
-            hours = differenceBetweenDatesInHours(getProblemDeadlineForWeek2015(week), getDateFromString(submissionTime));
+            hours = differenceBetweenDatesInHours(getProblemDeadlineForWeek(week), getDateFromString(submissionTime));
 
-            user.addSubmission(week, nextLine[2], hours, getWeek2015(submissionTime));
+            user.addSubmission(week, problemId, hours, getWeek(submissionTime));
+            if(getWeek(submissionTime) == 1)
+                System.out.println("added submission " + problemId + " for user " + user.getId() + " @ " + submissionTime);
         }
 
         csvReader.close();
@@ -243,22 +253,28 @@ public class MetricComputation2015 {
 
     }
 
-    private static void readObservations() throws IOException {
-        CSVReader csvReader = new CSVReader(new FileReader("data\\2015\\observations.csv"));
+    private static void readObservations(int weekToRead) throws IOException {
+        CSVReader csvReader = new CSVReader(new FileReader("data\\2016\\week" + weekToRead + "\\observations.csv"));
         String[] nextLine;
         String videoID;
         String videoStart;
+        int week;
 
         csvReader.readNext();
 
         while ((nextLine = csvReader.readNext()) != null) {
             if(users.containsKey(nextLine[1])) {
                 //video time computations
-                videoStart = nextLine[0].substring(nextLine[0].indexOf("_2014-")+1);
-                users.get(nextLine[1]).addVideoTime(getWeek2015(videoStart), Integer.parseInt(nextLine[3]));
+                videoStart = nextLine[0].substring(nextLine[0].indexOf("_2016-")+1);
+                week = getWeek(videoStart);
+
+                if(week != 99)
+                    users.get(nextLine[1]).addVideoTime(getWeek(videoStart), Integer.parseInt(nextLine[3]));
 
                 //distinct videos computations
                 videoID = nextLine[2];
+
+                System.out.println(getWeekForVideo(videoID));
                 users.get(nextLine[1]).addVideo(videoID, getWeekForVideo(videoID));
             }
         }
@@ -284,36 +300,36 @@ public class MetricComputation2015 {
     }
 
     //todo fix the ugly hack after the getDateFromString() is also fixed
-    private static Date getProblemDeadlineForWeek2015(int week) throws ParseException{
+    private static Date getProblemDeadlineForWeek(int week) throws ParseException{
         String deadline;
 
         switch (week) {
             case 1:
-                deadline = "2014-11-10";
+                deadline = "2016-01-25";
                 break;
             case 2:
-                deadline = "2014-11-17";
+                deadline = "2016-02-01";
                 break;
             case 3:
-                deadline = "2014-11-24";
+                deadline = "2016-02-08";
                 break;
             case 4:
-                deadline = "2014-12-01";
+                deadline = "2016-02-15";
                 break;
             case 5:
-                deadline = "2014-12-08";
+                deadline = "2016-02-22";
                 break;
             case 6:
-                deadline = "2014-12-15";
+                deadline = "2016-02-29";
                 break;
             case 7:
-                deadline = "2014-12-22";
+                deadline = "2016-03-07";
                 break;
             case 8:
-                deadline = "2014-12-29";
+                deadline = "2016-03-14";
                 break;
             default:
-                deadline = "2015-01-13";
+                deadline = "2016-04-04";
         }
 
         return getDateFromString(deadline + "T23:59:59Z");
@@ -328,28 +344,28 @@ public class MetricComputation2015 {
         return -1;
     }
 
-    private static int getWeek2015(String startTime){
-        if(startTime.compareTo("2014-10-28") > 0 && startTime.compareTo("2014-11-04") < 0)
+    private static int getWeek(String startTime){
+        if(startTime.compareTo("2016-01-12") > 0 && startTime.compareTo("2016-01-19") < 0)
             return 1;
-        if(startTime.compareTo("2014-11-04") > 0 && startTime.compareTo("2014-11-11") < 0)
+        if(startTime.compareTo("2016-01-19") > 0 && startTime.compareTo("2016-01-26") < 0)
             return 2;
-        if(startTime.compareTo("2014-11-11") > 0 && startTime.compareTo("2014-11-18") < 0)
+        if(startTime.compareTo("2016-01-26") > 0 && startTime.compareTo("2016-02-02") < 0)
             return 3;
-        if(startTime.compareTo("2014-11-18") > 0 && startTime.compareTo("2014-11-25") < 0)
+        if(startTime.compareTo("2016-02-02") > 0 && startTime.compareTo("2016-02-09") < 0)
             return 4;
-        if(startTime.compareTo("2014-11-25") > 0 && startTime.compareTo("2014-12-02") < 0)
+        if(startTime.compareTo("2016-02-09") > 0 && startTime.compareTo("2016-02-16") < 0)
             return 5;
-        if(startTime.compareTo("2014-12-02") > 0 && startTime.compareTo("2014-12-09") < 0)
+        if(startTime.compareTo("2016-02-16") > 0 && startTime.compareTo("2016-02-23") < 0)
             return 6;
-        if(startTime.compareTo("2014-12-09") > 0 && startTime.compareTo("2014-12-16") < 0)
+        if(startTime.compareTo("2016-02-23") > 0 && startTime.compareTo("2016-03-01") < 0)
             return 7;
-        if(startTime.compareTo("2014-12-16") > 0 && startTime.compareTo("2014-12-23") < 0)
+        if(startTime.compareTo("2016-03-01") > 0 && startTime.compareTo("2016-03-08") < 0)
             return 8;
-        if(startTime.compareTo("2014-12-23") > 0 && startTime.compareTo("2014-12-30") < 0)
+        if(startTime.compareTo("2016-03-08") > 0 && startTime.compareTo("2016-03-15") < 0)
             return 9;
-        if(startTime.compareTo("2014-12-30") > 0 && startTime.compareTo("2015-01-06") < 0)
+        if(startTime.compareTo("2016-03-15") > 0 && startTime.compareTo("2016-03-22") < 0)
             return 10;
-        if(startTime.compareTo("2015-01-06") > 0 && startTime.compareTo("2015-01-13") < 0)
+        if(startTime.compareTo("2016-03-22") > 0 && startTime.compareTo("2016-03-29") < 0)
             return 11;
         return 99;
     }

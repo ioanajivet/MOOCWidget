@@ -1,9 +1,8 @@
-/**
+package dwt; /**
  * Created by Ioana on 3/1/2016.
  */
 
 
-import analysis.UserForDataAnalysis;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 
@@ -38,16 +37,16 @@ public class Averages {
     //static HashMap<String, UserForDataAnalysis> controlGroup;
 
     public static void main(String[] args) throws IOException, ParseException {
-        int endWeek = 7;
+        int endWeek = 9;
 
         initialize();
 
 
 //** Average for indicators
-        //readUsers();
-        //readMetrics("data\\2016\\user_metrics\\");
+        readUsers();
+        readMetrics(endWeek, "data\\2016\\user_metrics\\");
         //writeMetrics(endWeek);
-        //analyseMetrics(endWeek);
+        analyseMetrics(endWeek);
 
 
 //** Engagement
@@ -56,10 +55,10 @@ public class Averages {
 
 //** Threshold Comparison
         //selectActiveUsers(endWeek);
-        readActive(endWeek);
-        readMetrics("data\\2016\\user_metrics\\");
+        //readActive(endWeek);
+        //readMetrics("data\\2016\\user_metrics\\");
         //writeMetrics(endWeek, "data\\2016\\post-data\\active\\");
-        writeMetricsForWeek(endWeek, "data\\2016\\post-data\\");
+        //writeMetricsForWeek(endWeek, "data\\2016\\post-data\\");
 
     }
 
@@ -177,9 +176,9 @@ public class Averages {
 
     //========= Average on metrics ==========
 
-    private static void readMetrics(String filepath) throws IOException {
+    private static void readMetrics(int endWeek, String filepath) throws IOException {
         //TODO: update end week
-        for (int i = 1; i < 8; i++)
+        for (int i = 1; i <= endWeek; i++)
             readWeeklyMetrics(i, filepath);
     }
 

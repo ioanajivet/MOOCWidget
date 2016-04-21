@@ -1,4 +1,4 @@
-package analysis;
+package dwt.analysis;
 /**
  * Created by Ioana on 3/1/2016.
  */
@@ -20,12 +20,59 @@ public class ThresholdComparison {
     private static HashMap<String, UserForDataAnalysis> controlGroup;
 
     public static void main(String[] args) throws IOException {
-        int endWeek = 7;
+        int endWeek = 9;
 
-        thresholdComparison(endWeek);
+        //thresholdComparison(endWeek);
+        thresholdComparisonSumEachWeek(endWeek);
 
-        //initialize();
+    }
 
+    private static void thresholdComparisonSumEachWeek(int endWeek) throws IOException {
+        initialize();
+
+        readActive(endWeek);
+        readScaledMetrics(endWeek, "data\\2016\\user_metrics\\");
+
+        writeSumForEachWeek(testGroup, endWeek, "data\\2016\\post-data\\active_test_threshold_sums_" + endWeek + ".csv");
+
+    }
+
+    private static void writeSumForEachWeek(HashMap<String, UserForDataAnalysis> group, int endWeek, String filename) throws IOException {
+        CSVWriter output = new CSVWriter(new FileWriter(filename), ',');
+        String[] toWrite;
+        String toWriteString;
+        UserForDataAnalysis current;
+
+        toWriteString = "User_id";
+        for(int i = 1; i <= endWeek; i++)
+            toWriteString += "#Week " + i;
+
+        toWrite = toWriteString.split("#");
+        output.writeNext(toWrite);
+
+        for (Map.Entry<String, UserForDataAnalysis> entry : group.entrySet()) {
+            current = entry.getValue();
+            toWrite[0] = entry.getKey();
+
+            for(int i = 1; i <= endWeek; i++)
+                toWrite[i] = String.valueOf(sumThresholdDifferences(current, i));
+
+            output.writeNext(toWrite);
+        }
+        output.close();
+    }
+
+    private static int sumThresholdDifferences(UserForDataAnalysis user, int week) {
+        int sum = 0;
+
+        sum += user.getPlatformTime(week);
+        sum += user.getVideoTime(week);
+        sum += user.getRatioTime(week);
+        sum += user.getDistinctVideos(week);
+        sum += user.getAssignments(week);
+        sum += user.getUntilDeadline(week);
+
+        return sum;
     }
 
 
@@ -33,14 +80,16 @@ public class ThresholdComparison {
         initialize();
 
         readActive(endWeek);
-        readScaledMetrics("data\\2016\\user_metrics\\");
+        readScaledMetrics(endWeek, "data\\2016\\user_metrics\\");
 
-        writeDifferences(testGroup, 7, "data\\2016\\post-data\\threshold_comparison\\");
+        //writeDifferences(testGroup, 7, "data\\2016\\post-data\\threshold_comparison\\");
+        writeDifferencesForWeek(testGroup, endWeek, "data\\2016\\post-data\\active_test_threshold_differences_" + endWeek + ".csv");
+        //writeDifferencesForWeek(controlGroup, endWeek, "data\\2016\\post-data\\active_control_threshold_differences_" + endWeek + ".csv");
     }
 
     private static void readActive(int endWeek) throws IOException {
-        readActiveUsers(testGroup, "data\\2016\\post-data\\threshold_comparison\\active_test_" + endWeek + ".csv");
-        readActiveUsers(controlGroup, "data\\2016\\post-data\\threshold_comparison\\active_control_" + endWeek + ".csv");
+        readActiveUsers(testGroup, "data\\2016\\post-data\\all_metrics_test_5min_" + endWeek + ".csv");
+        readActiveUsers(controlGroup, "data\\2016\\post-data\\all_metrics_control_5min_" + endWeek + ".csv");
     }
 
     private static void readActiveUsers(HashMap<String, UserForDataAnalysis> group, String filepath) throws IOException {
@@ -65,9 +114,8 @@ public class ThresholdComparison {
 
     }
 
-    private static void readScaledMetrics(String filepath) throws IOException {
-        //TODO: update end week
-        for (int i = 1; i < 8; i++)
+    private static void readScaledMetrics(int endWeek, String filepath) throws IOException {
+        for (int i = 1; i <= endWeek; i++)
             readWeeklyScaledMetrics(i, filepath);
     }
 
@@ -285,7 +333,7 @@ public class ThresholdComparison {
         output.close();
     }
 
-/*    private static void writeDifferencesForWeek(HashMap<String, UserForDataAnalysis> group, int week, String filepath) throws IOException {
+    private static void writeDifferencesForWeek(HashMap<String, UserForDataAnalysis> group, int week, String filepath) throws IOException {
         CSVWriter output = new CSVWriter(new FileWriter(filepath), ',');
         String[] toWrite;
         UserForDataAnalysis current;
@@ -294,22 +342,23 @@ public class ThresholdComparison {
 
         output.writeNext(toWrite);
 
-        for (Map.Entry<String, UserForDataAnalysis> entry : users.entrySet()) {
+        for (Map.Entry<String, UserForDataAnalysis> entry : group.entrySet()) {
             current = entry.getValue();
             toWrite[0] = entry.getKey();
 
-            toWrite[1] = String.valueOf(current.getWeekTime(week));
-            toWrite[2] = String.valueOf(current.getWeekVideoTime(week));
-            toWrite[3] = String.format("%.2f", current.getRatio(week));
-            toWrite[4] = String.valueOf(current.getDistinctVideosPerWeek(week));
-            toWrite[5] = String.valueOf(current.getAssignmentsSubmittedPerWeek(week));
-            toWrite[6] = String.valueOf(current.getUntilDeadlinesPerWeekAverage(week));
+            System.out.println(entry.getKey());
+            toWrite[1] = String.valueOf(current.getPlatformTime(week));
+            toWrite[2] = String.valueOf(current.getVideoTime(week));
+            toWrite[3] = String.valueOf(current.getRatioTime(week));
+            toWrite[4] = String.valueOf(current.getDistinctVideos(week));
+            toWrite[5] = String.valueOf(current.getAssignments(week));
+            toWrite[6] = String.valueOf(current.getUntilDeadline(week));
 
             output.writeNext(toWrite);
         }
         output.close();
 
-    }*/
+    }
 
 
 
