@@ -15,15 +15,19 @@ public class ScriptGeneration {
 
     private static HashMap<String, UserS> users = new HashMap<>();
 
-    private static String thresholds, nextWeek, scaledThresholds, scaledNextWeek;
+    private static String[] thresholds = new String[6],
+            nextWeek = new String[6],
+            scaledThresholds = new String[6],
+            scaledNextWeek = new String[6];
 
     public static void generateScripts(int week) throws IOException {
         readMetrics("data\\st\\2016\\week" + week + "\\metrics\\ST2015_metrics.csv");
         readScaledMetrics("data\\st\\2016\\week" + week + "\\metrics\\scaled_ST2015_metrics.csv");
+        readAnonIds("data\\st\\2016\\ST2016_anon.csv");
 
         readThresholds(week);
 
-        writeScripts("data\\st\\2016\\week" + week + "\\scripts\\");
+        writeScripts("data\\st\\2016\\week" + week + "\\scripts\\", week);
     }
 
     public static void readMetrics(String filename) throws IOException {
@@ -66,6 +70,27 @@ public class ScriptGeneration {
 
     }
 
+    public static void readAnonIds(String filename) throws IOException {
+        CSVReader csvReader = new CSVReader(new FileReader(filename));
+        String[] nextLine;
+        String id;
+
+        csvReader.readNext();
+
+        while ((nextLine = csvReader.readNext()) != null) {
+            id = nextLine[0];
+
+            UserS current = users.get(id);
+
+            if(current == null)
+                continue;
+
+            current.setAnonId(nextLine[1]);
+        }
+
+        csvReader.close();
+    }
+
     public static void readThresholds(int week) throws IOException {
         readThreshold(week, "data\\st\\thresholds\\thresholds5.csv");
         readScaledThreshold(week, "data\\st\\thresholds\\scaled_thresholds5.csv");
@@ -82,11 +107,13 @@ public class ScriptGeneration {
 
         //todo: check if it is last week; if yes, then there is no next week;
 
-        thresholds = getString(nextLine);
+        for(int i = 0; i < 6; i++)
+            thresholds[i] = nextLine[i+1];
 
         if (week != 10) {
             nextLine = csvReader.readNext();
-            nextWeek = getString(nextLine);
+            for(int i = 0; i < 6; i++)
+                nextWeek[i] = nextLine[i+1];
         }
 
         /*if(week != 10) {
@@ -108,11 +135,13 @@ public class ScriptGeneration {
 
         while ((nextLine = csvReader.readNext()) != null && line < week);
 
-        scaledThresholds = getString(nextLine);
+        for(int i = 0; i < 6; i++)
+            scaledThresholds[i] = nextLine[i+1];
 
         if(week != 10) {
             nextLine = csvReader.readNext();
-            scaledNextWeek = getString(nextLine);
+            for(int i = 0; i < 6; i++)
+                scaledNextWeek[i] = nextLine[i+1];
         }
         /*//todo: check if it is last week; if yes, then there is no next week;
         for(int i = 0; i < 6; i++)
@@ -128,15 +157,16 @@ public class ScriptGeneration {
 
     }
 
-    public static void writeScripts(String destinationFolder) throws IOException {
+    public static void writeScripts(String destinationFolder, int week) throws IOException {
 
-        UserS me = users.get("5524478");
-        writeUserScript(destinationFolder, me.id, getChartOptions(me.values, me.scaledValues));
+        //UserS me = users.get("8206618");
 
-        /*for (Map.Entry<String, UserS> entry : users.entrySet()) {
-            writeUserScript(destinationFolder, entry.getKey(), getChartOptions(entry.getValue().values, entry.getValue().scaledValues));
-            System.out.println(entry.getKey() + ": " + entry.getValue().values + " == " + entry.getValue().scaledValues);
-        }*/
+        //writeUserScript(destinationFolder, me.id, getChartOptions(me.values, me.scaledValues, me.id, week));
+
+        for (Map.Entry<String, UserS> entry : users.entrySet()) {
+            UserS current = entry.getValue();
+            writeUserScript(destinationFolder, current.anonId, getChartOptions(current.values, current.scaledValues, current.id, week));
+        }
 
     }
 
@@ -171,7 +201,25 @@ public class ScriptGeneration {
         return threshold;
     }
 
-    private static String getChartOptions(String values, String scaledValues) {
+    private static String getChartOptions(String[] values, String[] scaledValues, String userId, int week) {
+        String[] metricNames = ("Sessions per week#Average length of a session#Average time between sessions#" +
+                "Forum sessions#Weekly assessment answers submitted#Timeliness of weekly assessment submission").split("#");
+        String[] metricUnits = "#min#h###h".split("#");
+        String[] thresh, scaledThresh, nextW, scaledNextW;
+
+
+        metricNames = randomizeOrder(metricNames, Integer.parseInt(userId));
+        metricUnits = randomizeOrder(metricUnits, Integer.parseInt(userId));
+
+        values = randomizeOrder(values, Integer.parseInt(userId));
+        scaledValues = randomizeOrder(scaledValues, Integer.parseInt(userId));
+
+        thresh = randomizeOrder(thresholds, Integer.parseInt(userId));
+        scaledThresh = randomizeOrder(scaledThresholds, Integer.parseInt(userId));
+
+        nextW = randomizeOrder(nextWeek, Integer.parseInt(userId));
+        scaledNextW = randomizeOrder(scaledNextWeek, Integer.parseInt(userId));
+
         String options = "function loadScript(url, callback)\n" +
                 "{\n" +
                 "    // Adding the script tag to the head as suggested before\n" +
@@ -189,29 +237,48 @@ public class ScriptGeneration {
                 "    head.appendChild(script);\n" +
                 "}\n" +
                 "\n" +
+                "function timeStamp() {\n" +
+                "  var now = new Date();\n" +
+                "  var date = [ now.getFullYear(), now.getMonth() + 1, now.getDate() ];\n" +
+                "  var time = [ now.getHours(), now.getMinutes(), now.getSeconds() ];\n" +
+                "\n" +
+                "  for ( var i = 1; i < 3; i++ ) {\n" +
+                "    if ( time[i] < 10 ) {\n" +
+                "      time[i] = \"0\" + time[i];\n" +
+                "    }\n" +
+                "  }\n" +
+                "\n" +
+                "  if( date[1] < 10 ) {\n" +
+                "\tdate[1] = \"0\" + date[1];\n" +
+                "  }\n" +
+                "  \n" +
+                "  return date.join(\"-\") + \"Z\" + time.join(\":\");\n" +
+                "}\n" +
+                "\n" +
                 "  var loadWidget = function() {\n" +
                 "\t\n" +
-                "\tvar metricNames = [\n" +
-                "       'Sessions per week', \n" +
-                "       'Average length of a session', \n" +
-                "       'Average time between sessions', \n" +
-                "       'Forum sessions', \n" +
-                "       'Weekly assessment answers submitted', \n" +
-                "       'Timeliness of weekly assessment submission'\n" +
-                "    ];\n" +
-                "\tvar metricUnits = ['', 'min', 'h', '', '', 'h'];\n" +
+                "\tvar metricNames = " + getStringOfString(metricNames) + ";\n" +
+                "\tvar metricUnits = " + getStringOfString(metricUnits) + ";\n" +
                 "\t\n" +
-                "\tvar values = " + values + ";\n" +
-                "\tvar thisWeek = " + thresholds + ";\n" +
-                "\tvar nextWeek = " + nextWeek + ";\n" +
+                "\tvar values = " + getString(values) + ";\n" +
+                "\tvar thisWeek = " + getString(thresh) + ";\n" +
+                "\tvar nextWeek = " + getString(nextW) + ";\n" +
                 "\n" +
-                "    $('#container').highcharts({\n" +
+                "\tvar user_id = analytics.user().id();\n" +
+                "\t\n" +
+                "\t$('#container').highcharts({\n" +
                 "        chart: {\n" +
                 "            polar: true,\n" +
                 "\t\t\tstyle: {\n" +
                 "\t\t\t\tfontFamily: 'Open Sans, sans-serif'\n" +
                 "\t\t\t},\n" +
-                "\t\t\ttype: 'area'\n" +
+                "\t\t\ttype: 'area',\n" +
+                "\t\t\tevents: {\n" +
+                "\t\t\t\tload: function () {\n" +
+                "\t\t\t\t\tvar category = user_id + '_week" + week + "';\n" +
+                "\t\t\t\t\tga('send', 'event', category, 'load_' + timeStamp());\n" +
+                "\t\t\t\t}\n" +
+                "\t\t\t}\n" +
                 "                 \n" +
                 "        },\n" +
                 "\n" +
@@ -265,19 +332,6 @@ public class ScriptGeneration {
                 "\t\t\t\tmarker: {\n" +
                 "\t\t\t\t\tsymbol: 'diamond',\n" +
                 "\t\t\t\t\tradius: 3\n" +
-                "\t\t\t\t},\n" +
-                "\t\t\t\tpoint: {\n" +
-                "\t\t\t\t\tevents: {\n" +
-                "\t\t\t\t\t\tmouseOver: function () {\n" +
-                "                            var chart = this.series.chart;\n" +
-                "                            \n" +
-                "                            chart.lbl\n" +
-                "                                .show()\n" +
-                "                                .attr({\n" +
-                "                                    text: 'x: ' + this.x + ', y: ' + this.y\n" +
-                "                                });\n" +
-                "                        }\n" +
-                "\t\t\t\t\t}\n" +
                 "\t\t\t\t}\n" +
                 "            },\n" +
                 "            column: {\n" +
@@ -310,23 +364,47 @@ public class ScriptGeneration {
                 "            type: 'line',\n" +
                 "            name: 'Average graduate this week',\n" +
                 "            color: 'rgba(188, 64, 119, 0.5)',\n" +
-                "            data: " + scaledNextWeek + ",\n" +
-                "\t\t\tvisible: false\n" +
+                "            data: " + getString(scaledNextW) + ",\n" +
+                "\t\t\tvisible: false,\n" +
+                "\t\t\tevents: {\n" +
+                "                    show: function () {\n" +
+                "\t\t\t\t\t\tga('send', 'event', user_id + '_week" + week + "', 'show-this-week_' + timeStamp());\n" +
+                "                    },\n" +
+                "\t\t\t\t\thide: function () {\n" +
+                "\t\t\t\t\t\tga('send', 'event', user_id + '_week" + week + "', 'hide-this-week_' + timeStamp());\n" +
+                "                    }\n" +
+                "                }\n" +
                 "        },\n" +
                 "\t\t\n" +
                 "\t\t{\n" +
                 "        \tcolor: 'rgba(255, 255, 102, 0.5)',\n" +
                 "            name: 'Average graduate last week',\n" +
-                "            data: " + scaledThresholds + ", \n" +
+                "            data: " + getString(scaledThresh) + ", \n" +
                 "            borderWidth: 0.5,\n" +
-                "            borderColor: '#000000'\t\t\t\t\n" +
+                "            borderColor: '#000000',\n" +
+                "\t\t\tevents: {\n" +
+                "                    show: function () {\n" +
+                "\t\t\t\t\t\tga('send', 'event', user_id + '_week" + week + "', 'show-last-week_' + timeStamp());\n" +
+                "                    },\n" +
+                "\t\t\t\t\thide: function () {\n" +
+                "\t\t\t\t\t\tga('send', 'event', user_id + '_week" + week + "', 'hide-last-week_' + timeStamp());\n" +
+                "                    }\n" +
+                "                }\t\t\t\t\n" +
                 "      \n" +
                 "        },\n" +
                 "\t\t\n" +
                 "\t\t{\n" +
                 "            name: 'You',\n" +
                 "            color: 'rgba(144, 202, 249, 0.5)',\n" +
-                "            data: " + scaledValues + "\n" +
+                "            data: " + getString(scaledValues) + ",\n" +
+                "\t\t\tevents: {\n" +
+                "                    show: function () {\n" +
+                "\t\t\t\t\t\tga('send', 'event', user_id + '_week" + week + "', 'show-you_' + timeStamp());\n" +
+                "                    },\n" +
+                "\t\t\t\t\thide: function () {\n" +
+                "\t\t\t\t\t\tga('send', 'event', user_id + '_week" + week + "', 'hide-you_' + timeStamp());\n" +
+                "                    }\n" +
+                "                }\n" +
                 "        }\n" +
                 "\t\t]\n" +
                 "    });\n" +
@@ -339,13 +417,35 @@ public class ScriptGeneration {
         return options;
     }
 
+    private static String[] randomizeOrder(String[] metricNames, int user) {
+        int init = user;
+        String[] newOrder = new String[6];
+
+        for(int i = 0; i < 6; i++, init++) {
+            newOrder[i] = metricNames[init%6];
+        }
+
+        return newOrder;
+
+    }
 
     private static String getString(String []line){
         String values = "[";
 
-        for (int i = 1; i < 6; i++)
+        for (int i = 0; i < 5; i++)
             values += line[i] + ",";
-        values += line[6] + "]";
+        values += line[5] + "]";
+
+        return values;
+
+    }
+
+    private static String getStringOfString(String []line){
+        String values = "[";
+
+        for (int i = 0; i < 5; i++)
+            values += "'" + line[i] + "',\n";
+        values += "'" + line[5] + "']";
 
         return values;
 
@@ -354,38 +454,33 @@ public class ScriptGeneration {
 
 class UserS {
     public String id;
+    public String anonId;
 
-    public String values;
-    public String scaledValues;
+    public String[] values;
+    public String[] scaledValues;
 
     public UserS (String id) {
         this.id = id;
+
+        values = new String[6];
+        scaledValues = new String[6];
+
+    }
+
+    public void setAnonId(String anon) {
+        anonId = anon;
     }
 
     public void setValues(String[] val) {
-        values = "[";
 
-        for (int i = 1; i < 6; i++)
-            values += val[i] + ",";
-        values += val[6] + "]";
+        for(int i = 0; i < 6; i++)
+            values[i] = val[i+1];
 
     }
 
     public void setScaledValues(String[] val) {
-        scaledValues = "[";
 
-        for (int i = 1; i < 6; i++) {
-            System.out.println(val[i]);
-            if(val[i].compareTo("NaN") == 0)
-                scaledValues += "0,";
-            else
-                scaledValues += val[i] + ",";
-        }
-
-        if(val[6].compareTo("NaN") == 0)
-            scaledValues += "0]";
-        else
-            scaledValues += val[6] + "]";
-
+        for(int i = 0; i < 6; i++)
+            scaledValues[i] = val[i+1];
     }
 }

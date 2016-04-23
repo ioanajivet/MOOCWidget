@@ -174,6 +174,7 @@ public class ThresholdComputation {
 
     private static int getAverage(List<Integer> integers, int cutOffPercent) {
         int min, max, cutOffMin, cutOffMax;
+        double average;
 
         min = getMinimum(integers);
         max = getMaximum(integers);
@@ -181,11 +182,16 @@ public class ThresholdComputation {
         cutOffMin = min + (max - min) * cutOffPercent / 100;
         cutOffMax = max - (max - min) * cutOffPercent / 100;
 
-        return (int) Math.round(getCutOffRange(integers, cutOffMin, cutOffMax)
+        average = Math.round(getCutOffRange(integers, cutOffMin, cutOffMax)
                 .stream()
                 .mapToInt(e -> e)
                 .average()
                 .getAsDouble());
+
+        if(Double.isNaN(average))
+            return 0;
+
+        return (int) average;
     }
 
     private static int getMaximum(List<Integer> integers) {

@@ -18,8 +18,8 @@ public class MainST {
 
         //Compute metrics for 2016
         int week = 1;
-        //MetricComputation.computeMetrics(week);
-        //ScalingComputation.scalingMetrics(week);
+        MetricComputation.computeMetrics(week);
+        ScalingComputation.scalingMetrics(week);
 
         ScriptGeneration.generateScripts(week);
 
