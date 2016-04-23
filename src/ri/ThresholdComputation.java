@@ -1,4 +1,4 @@
-package st; /**
+package ri; /**
  * Created by Ioana on 4/20/2016.
  */
 
@@ -21,46 +21,47 @@ public class ThresholdComputation {
     static HashMap<Integer, ArrayList<Integer>> weeklySessionsPerWeek;
     static HashMap<Integer, ArrayList<Integer>> weeklySessionLength;
     static HashMap<Integer, ArrayList<Integer>> weeklyBetweenSessions;
-    static HashMap<Integer, ArrayList<Integer>> weeklyForumSessions;
+    static HashMap<Integer, ArrayList<Integer>> weeklyTimeOnTask;
     static HashMap<Integer, ArrayList<Integer>> weeklyAssignments;
     static HashMap<Integer, ArrayList<Integer>> weeklyUntilDeadline;
 
 
-    public static void computeThresholds() throws IOException, ParseException {
+    public static void computeThresholds(int maxWeek) throws IOException, ParseException {
 
         int cutOffPercent = 5;
 
-        initialize();
-        readMetrics("data\\st\\2015\\output\\ST2015_metrics_");
+        initialize(maxWeek);
+        readMetrics("data\\ri\\2014\\output\\RI2014_metrics_", maxWeek);
 
-        writeThresholds("data\\st\\thresholds\\thresholds" + cutOffPercent + ".csv", cutOffPercent);
-        writeMaximums("data\\st\\thresholds\\maximum" + cutOffPercent + ".csv", cutOffPercent);
-        writeScaledThresholds("data\\st\\thresholds\\scaled_thresholds" + cutOffPercent + ".csv", cutOffPercent);
+        writeThresholds("data\\ri\\thresholds\\thresholds" + cutOffPercent + ".csv", cutOffPercent, maxWeek);
+        writeMaximums("data\\ri\\thresholds\\maximum" + cutOffPercent + ".csv", cutOffPercent, maxWeek);
+        writeScaledThresholds("data\\ri\\thresholds\\scaled_thresholds" + cutOffPercent + ".csv", cutOffPercent, maxWeek);
     }
 
     //************************
     //************ Loading data
-    private static void initialize() {
+    private static void initialize(int maxWeek) {
         weeklySessionsPerWeek = new HashMap<>();
         weeklySessionLength = new HashMap<>();
         weeklyBetweenSessions = new HashMap<>();
-        weeklyForumSessions = new HashMap<>();
+        weeklyTimeOnTask = new HashMap<>();
         weeklyAssignments = new HashMap<>();
         weeklyUntilDeadline = new HashMap<>();
 
-        for (int i = 1; i < 11; i++) {
+        for (int i = 1; i <= maxWeek; i++) {
             weeklySessionsPerWeek.put(i, new ArrayList<>());
             weeklySessionLength.put(i, new ArrayList<>());
             weeklyBetweenSessions.put(i, new ArrayList<>());
-            weeklyForumSessions.put(i, new ArrayList<>());
+            weeklyTimeOnTask.put(i, new ArrayList<>());
             weeklyAssignments.put(i, new ArrayList<>());
             weeklyUntilDeadline.put(i, new ArrayList<>());
         }
 
     }
 
-    private static void readMetrics(String filepath) throws IOException {
-        for (int i = 1; i < 11; i++)
+    private static void readMetrics(String filepath, int maxWeek) throws IOException {
+        //todo: replace "10" with maxWeeks - to remove hardcoded dependencies
+        for (int i = 1; i <= maxWeek; i++)
             readMetricsPerWeek(i, filepath + i + ".csv");
     }
 
@@ -68,7 +69,7 @@ public class ThresholdComputation {
         CSVReader csvReader = new CSVReader(new FileReader(filename));
         String[] nextLine;
 
-        int sessionsPerWeek, sessionLength, betweenSessions, forumSessions, assignments, timeliness;
+        int sessionsPerWeek, sessionLength, betweenSessions, timeOnTask, assignments, timeliness;
 
         csvReader.readNext();
 
@@ -77,7 +78,7 @@ public class ThresholdComputation {
             sessionsPerWeek = Integer.parseInt(nextLine[1]);
             sessionLength = Integer.parseInt(nextLine[2]);
             betweenSessions = Integer.parseInt(nextLine[3]);
-            forumSessions = Integer.parseInt(nextLine[4]);
+            timeOnTask = Integer.parseInt(nextLine[4]);
             assignments = Integer.parseInt(nextLine[5]);
             timeliness = Integer.parseInt(nextLine[6]);
 
@@ -85,7 +86,7 @@ public class ThresholdComputation {
             weeklySessionLength.get(week).add(sessionLength);
             if(betweenSessions > -1)
                 weeklyBetweenSessions.get(week).add(betweenSessions);
-            weeklyForumSessions.get(week).add(forumSessions);
+            weeklyTimeOnTask.get(week).add(timeOnTask);
             weeklyAssignments.get(week).add(assignments);
             weeklyUntilDeadline.get(week).add(timeliness);
 
@@ -96,19 +97,19 @@ public class ThresholdComputation {
 
     //************************
     //************ Write data
-    private static void writeThresholds(String filename, int cutOffPercent) throws IOException {
+    private static void writeThresholds(String filename, int cutOffPercent, int maxWeek) throws IOException {
         CSVWriter output = new CSVWriter(new FileWriter(filename), ',');
         String[] toWrite;
 
-        toWrite = "User_id#Sessions/week#Length of session (min) #Between sessions (h)#Forum sessions#Assignments#Until deadline (h)".split("#");
+        toWrite = "User_id#Sessions/week#Length of session (min) #Between sessions (h)#Time on task (%)#Assignments#Until deadline (h)".split("#");
         output.writeNext(toWrite);
 
-        for(int i = 1; i < 11; i++) {
+        for(int i = 1; i <= maxWeek; i++) {
             toWrite[0] = "Week " + i;
             toWrite[1] = String.valueOf(getAverage(weeklySessionsPerWeek.get(i), cutOffPercent));
             toWrite[2] = String.valueOf(getAverage(weeklySessionLength.get(i), cutOffPercent));
             toWrite[3] = String.valueOf(getAverage(weeklyBetweenSessions.get(i), cutOffPercent));
-            toWrite[4] = String.valueOf(getAverage(weeklyForumSessions.get(i), cutOffPercent));
+            toWrite[4] = String.valueOf(getAverage(weeklyTimeOnTask.get(i), cutOffPercent));
             toWrite[5] = String.valueOf(getAverage(weeklyAssignments.get(i), cutOffPercent));
             toWrite[6] = String.valueOf(getAverage(weeklyUntilDeadline.get(i), cutOffPercent));
 
@@ -118,19 +119,19 @@ public class ThresholdComputation {
         output.close();
     }
 
-    private static void writeMaximums(String filename, int cutOffPercent) throws IOException {
+    private static void writeMaximums(String filename, int cutOffPercent, int maxWeek) throws IOException {
         CSVWriter output = new CSVWriter(new FileWriter(filename), ',');
         String[] toWrite;
 
-        toWrite = "User_id#Sessions/week#Length of session (min) #Between sessions (h)#Forum sessions#Assignments#Until deadline (h)".split("#");
+        toWrite = "User_id#Sessions/week#Length of session (min) #Between sessions (h)#Time on task (%)#Assignments#Until deadline (h)".split("#");
         output.writeNext(toWrite);
 
-        for(int i = 1; i < 11; i++) {
+        for(int i = 1; i <= maxWeek; i++) {
             toWrite[0] = "Week " + i;
             toWrite[1] = String.valueOf(getMaximum(weeklySessionsPerWeek.get(i), cutOffPercent));
             toWrite[2] = String.valueOf(getMaximum(weeklySessionLength.get(i), cutOffPercent));
             toWrite[3] = String.valueOf(getMaximum(weeklyBetweenSessions.get(i), cutOffPercent));
-            toWrite[4] = String.valueOf(getMaximum(weeklyForumSessions.get(i), cutOffPercent));
+            toWrite[4] = String.valueOf(getMaximum(weeklyTimeOnTask.get(i), cutOffPercent));
             toWrite[5] = String.valueOf(getMaximum(weeklyAssignments.get(i), cutOffPercent));
             toWrite[6] = String.valueOf(getMaximum(weeklyUntilDeadline.get(i), cutOffPercent));
 
@@ -140,14 +141,14 @@ public class ThresholdComputation {
         output.close();
     }
 
-    private static void writeScaledThresholds(String filename, int cutOffPercent) throws IOException {
+    private static void writeScaledThresholds(String filename, int cutOffPercent, int maxWeek) throws IOException {
         CSVWriter output = new CSVWriter(new FileWriter(filename), ',');
         String[] toWrite;
 
-        toWrite = "User_id#Sessions/week#Length of session (min) #Between sessions (h)#Forum sessions#Assignments#Until deadline (h)".split("#");
+        toWrite = "User_id#Sessions/week#Length of session (min) #Between sessions (h)#Time on task (%)#Assignments#Until deadline (h)".split("#");
         output.writeNext(toWrite);
 
-        for(int i = 1; i < 11; i++) {
+        for(int i = 1; i <= maxWeek; i++) {
             toWrite[0] = "Week " + i;
             toWrite[1] = String.format("%.1f", getAverage(weeklySessionsPerWeek.get(i), cutOffPercent) * 10.0
                     / getMaximum(weeklySessionsPerWeek.get(i), cutOffPercent));
@@ -155,8 +156,8 @@ public class ThresholdComputation {
                     / getMaximum(weeklySessionLength.get(i), cutOffPercent));
             toWrite[3] = String.format("%.1f", getAverage(weeklyBetweenSessions.get(i), cutOffPercent) * 10.0
                     / getMaximum(weeklyBetweenSessions.get(i), cutOffPercent));
-            toWrite[4] = String.format("%.1f", getAverage(weeklyForumSessions.get(i), cutOffPercent) * 10.0
-                    / getMaximum(weeklyForumSessions.get(i), cutOffPercent));
+            toWrite[4] = String.format("%.1f", getAverage(weeklyTimeOnTask.get(i), cutOffPercent) * 10.0
+                    / getMaximum(weeklyTimeOnTask.get(i), cutOffPercent));
             toWrite[5] = String.format("%.1f", getAverage(weeklyAssignments.get(i), cutOffPercent) * 10.0
                     / getMaximum(weeklyAssignments.get(i), cutOffPercent));
             toWrite[6] = String.format("%.1f", getAverage(weeklyUntilDeadline.get(i), cutOffPercent) * 10.0
@@ -218,6 +219,8 @@ public class ThresholdComputation {
 
         min = getMinimum(integers);
         max = getMaximum(integers);
+
+        System.out.println(min + " << " + max);
 
         cutOffMin = min + (max - min) * cutOffPercent / 100;
         cutOffMax = max - (max - min) * cutOffPercent / 100;

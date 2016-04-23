@@ -25,16 +25,10 @@ public class MetricComputation {
         readSessions("data\\st\\2015\\sessions.csv");
 
         readForumSessions("data\\st\\2015\\forum_sessions.csv");
-        //readQuizSessions("data\\st\\2015\\quiz_sessions.csv");
-        //readObservations("data\\st\\2015\\observations.csv");
 
         readProblems("data\\st\\2015\\problems.csv");
         readSubmissions("data\\st\\2015\\submissions.csv");
 
-        //writeSessions(week, "data\\ri\\2014\\output\\" + week + "_#sessions.csv");
-        //writeAverageTimePerSession(week, "data\\ri\\2014\\output\\" + week + "_averageSessionTime.csv");
-        //writeAverageSessionsPerWeek(week, "data\\ri\\2014\\output\\" + week + "_averageSessionsPerWeek.csv");
-        //writeAverageLengthBetweenSessions(week, "data\\ri\\2014\\output\\" + week + "_averageLengthBetweenSessions.csv");
         writeMetrics(users, week, "data\\st\\2015\\output\\ST2015_metrics_" + week + ".csv");
     }
 
@@ -46,16 +40,10 @@ public class MetricComputation {
         readSessions("data\\st\\2016\\week" + week + "\\data\\sessions.csv");
 
         readForumSessions("data\\st\\2016\\week" + week + "\\data\\forum_sessions.csv");
-        //readQuizSessions("data\\st\\2015\\quiz_sessions.csv");
-        //readObservations("data\\st\\2015\\observations.csv");
 
         readProblems("data\\st\\2016\\week" + week + "\\data\\problems.csv");
         readSubmissions("data\\st\\2016\\week" + week + "\\data\\submissions.csv");
 
-        //writeSessions(week, "data\\ri\\2014\\output\\" + week + "_#sessions.csv");
-        //writeAverageTimePerSession(week, "data\\ri\\2014\\output\\" + week + "_averageSessionTime.csv");
-        //writeAverageSessionsPerWeek(week, "data\\ri\\2014\\output\\" + week + "_averageSessionsPerWeek.csv");
-        //writeAverageLengthBetweenSessions(week, "data\\ri\\2014\\output\\" + week + "_averageLengthBetweenSessions.csv");
         writeMetrics(users, week, "data\\st\\2016\\week" + week + "\\metrics\\ST2015_metrics.csv");
     }
 
@@ -168,7 +156,7 @@ public class MetricComputation {
                 continue;
 
             //String problemId, int submissionWeek, Date submissionTime, Date problemDeadline
-            user.addSubmission(nextLine[4], week, submissionTime, getProblemDeadlineForProblem2014(problems.get(nextLine[4])));
+            user.addSubmission(nextLine[4], week, submissionTime, getProblemDeadline(problems.get(nextLine[4])));
 
             sub++;
         }
@@ -282,7 +270,7 @@ public class MetricComputation {
         return deadline + " 12:00:00";
     }
 
-    private static String getProblemDeadlineForProblem(int problemWeek) throws ParseException{
+    private static String getProblemDeadline(int problemWeek) throws ParseException{
         String deadline;
 
         switch (problemWeek) {

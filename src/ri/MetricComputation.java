@@ -19,7 +19,7 @@ public class MetricComputation {
     static HashMap<String, UserMetricComputation> users = new HashMap<>();
     static HashMap<String, Integer> problems = new HashMap<>();
 
-    public static void computeMetrics(int week) throws IOException, ParseException {
+    public static void computeMetrics2014(int week) throws IOException, ParseException {
         readUsers(users, "data\\ri\\2014\\RI2014_graduates.csv");
         readSessions("data\\ri\\2014\\sessions.csv");
 
@@ -210,20 +210,20 @@ public class MetricComputation {
         String[] toWrite;
         UserMetricComputation current;
 
-        toWrite = "User_id#Sessions#Sessions/week#Length of session#Between sessions#Time on-task#Assignments#Until deadline".split("#");
+        toWrite = "User_id#Sessions/week#Length of session#Between sessions#Time on-task#Assignments#Until deadline#Sessions".split("#");
 
         output.writeNext(toWrite);
 
         for (Map.Entry<String, UserMetricComputation> entry : users.entrySet()) {
             current = entry.getValue();
             toWrite[0] = entry.getKey();
-            toWrite[1] = String.valueOf(current.getSessions(week));
-            toWrite[2] = String.valueOf(current.getSessionsPerWeek(week));
-            toWrite[3] = String.valueOf(current.getAverageSessionLength(week));
-            toWrite[4] = String.valueOf(current.getAverageTimeBetweenSessions(week));
-            toWrite[5] = String.valueOf(current.getTimeOnTask(week));
-            toWrite[6] = String.valueOf(current.getQuizSubmissions(week));
-            toWrite[7] = String.valueOf(current.getRecommendedTimeliness(week));
+            toWrite[1] = String.valueOf(current.getSessionsPerWeek(week));
+            toWrite[2] = String.valueOf(current.getAverageSessionLength(week));
+            toWrite[3] = String.valueOf(current.getAverageTimeBetweenSessions(week));
+            toWrite[4] = String.valueOf(current.getTimeOnTask(week));
+            toWrite[5] = String.valueOf(current.getQuizSubmissions(week));
+            toWrite[6] = String.valueOf(current.getRecommendedTimeliness(week));
+            toWrite[7] = String.valueOf(current.getSessions(week));
 
             output.writeNext(toWrite);
         }
