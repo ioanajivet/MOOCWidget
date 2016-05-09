@@ -81,4 +81,6 @@ public class Session implements Comparable<Session> {
     public Date getEndDate() {
         return getDateFromString(end_time);
     }
+
+    public int getDuration() { return duration; }
 }

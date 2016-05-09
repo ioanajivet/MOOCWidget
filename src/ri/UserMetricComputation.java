@@ -1,9 +1,6 @@
 package ri;
 
 
-import dwt.UserForMetricsComputation;
-import javafx.util.Pair;
-
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -26,6 +23,7 @@ public class UserMetricComputation {
     private int[] forum_session_time;
     private int[] quiz_session_time;
     private int[] video_session_time;
+    private int[] activity_session_time;
 
     private int []assignmentsPerWeek;
     private List<String> submittedAssignments;
@@ -47,6 +45,7 @@ public class UserMetricComputation {
         forum_session_time = new int[11];
         quiz_session_time = new int[11];
         video_session_time = new int[11];
+        activity_session_time = new int[11];
 
         assignmentsPerWeek = new int[11];
         submittedAssignments = new ArrayList<>();
@@ -115,6 +114,10 @@ public class UserMetricComputation {
         }
     }
 
+    public void addActivitySession(int week, int sessionLength) {
+        activity_session_time[week - 1] += sessionLength;
+    }
+
     public void addSubmission(String problemId, int submissionWeek, String submissionTime, String problemDeadline){
         HashMap<String, Date> weekSubmissions;
 
@@ -181,8 +184,8 @@ public class UserMetricComputation {
 
         Collections.sort(sessionTimestamps);
 
-        for(i = 1; i < sessionTimestamps.size() && sessionTimestamps.get(i).getStartTime().compareTo(weedEndDate(week)) < 0; i++) {
-
+        //for(i = 1; i < sessionTimestamps.size() && sessionTimestamps.get(i).getStartTime().compareTo(weekEndDate2014(week)) < 0; i++) {
+        for(i = 1; i < sessionTimestamps.size() && sessionTimestamps.get(i).getStartTime().compareTo(weekEndDate(week)) < 0; i++) {
             //todo: check if it calculates right with i and i-1 indices
             diff = sessionTimestamps.get(i).getStartDate().getTime() - sessionTimestamps.get(i-1).getEndDate().getTime();
 
@@ -206,8 +209,9 @@ public class UserMetricComputation {
         int onTaskTime = 0, totalTime = 0;
 
         for(int i = 0; i < week; i++) {
-            onTaskTime += quiz_session_time[i] + video_session_time[i] + forum_session_time[i];
+            //onTaskTime += quiz_session_time[i] + video_session_time[i] + forum_session_time[i];
             //onTaskTime += video_session_time[i];
+            onTaskTime += activity_session_time[i];
             totalTime += session_length[i];
         }
 
@@ -230,7 +234,7 @@ public class UserMetricComputation {
     //Metric 6. Timeliness according to the recommended deadline - one week after publication of new material
     public int getRecommendedTimeliness(int week) {
         HashMap<String, Date> weekSubmissions;
-        long totalHours = 0;
+        long totalHours = 0, diff;
         for(int i = 1; i <= week; i++) {
             weekSubmissions = submissions.get(i);
 
@@ -238,7 +242,12 @@ public class UserMetricComputation {
                 continue;
 
             for (Map.Entry<String, Date> entry : weekSubmissions.entrySet()) {
-                totalHours += differenceBetweenDatesInHours(deadlines.get(entry.getKey()), entry.getValue());
+                diff = differenceBetweenDatesInHours(deadlines.get(entry.getKey()), entry.getValue());
+
+                totalHours += diff;
+
+                //if(this.id.compareTo("151030") == 0)
+                  //  System.out.println(entry.getValue() + " <<>> " + deadlines.get(entry.getKey()) + " ---> " + diff);
             }
         }
 
@@ -273,42 +282,7 @@ public class UserMetricComputation {
         return session_length[week-1]/ session_count[week-1];
     }
 
-
-
-    /*private Date weedEndDate(int week) {
-        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        try {
-            switch (week) {
-                case 1:
-                    return format.parse("2014-12-02 00:00:00");
-                case 2:
-                    return format.parse("2014-12-09 00:00:00");
-                case 3:
-                    return format.parse("2014-12-16 00:00:00");
-                case 4:
-                    return format.parse("2014-12-23 00:00:00");
-                case 5:
-                    return format.parse("2014-12-30 00:00:00");
-                case 6:
-                    return format.parse("2015-01-06 00:00:00");
-                case 7:
-                    return format.parse("2015-01-13 00:00:00");
-                case 8:
-                    return format.parse("2015-01-20 00:00:00");
-                case 9:
-                    return format.parse("2015-01-27 00:00:00");
-                case 10:
-                    return format.parse("2015-02-03 00:00:00");
-                default:
-                    return format.parse("2015-02-14 00:00:00");
-            }
-        } catch (ParseException e) {
-            System.out.println();
-        }
-        return new Date();
-    }*/
-
-    private String weedEndDate(int week) {
+    private String weekEndDate2014(int week) {
             switch (week) {
                 case 1:
                     return "2014-12-02 00:00:00";
@@ -317,22 +291,42 @@ public class UserMetricComputation {
                 case 3:
                     return "2014-12-16 00:00:00";
                 case 4:
-                    return "2014-12-23 00:00:00";
-                case 5:
-                    return "2014-12-30 00:00:00";
-                case 6:
                     return "2015-01-06 00:00:00";
-                case 7:
+                case 5:
                     return "2015-01-13 00:00:00";
-                case 8:
+                case 6:
                     return "2015-01-20 00:00:00";
-                case 9:
+                case 7:
                     return "2015-01-27 00:00:00";
-                case 10:
+                case 8:
                     return "2015-02-03 00:00:00";
                 default:
                     return "2015-02-14 00:00:00";
             }
+
+    }
+
+    private String weekEndDate(int week) {
+        switch (week) {
+            case 1:
+                return "2016-04-18 00:00:00";
+            case 2:
+                return "2016-04-25 00:00:00";
+            case 3:
+                return "2016-05-02 00:00:00";
+            case 4:
+                return "2016-05-09 00:00:00";
+            case 5:
+                return "2016-05-16 00:00:00";
+            case 6:
+                return "2016-05-23 00:00:00";
+            case 7:
+                return "2016-05-30 00:00:00";
+            case 8:
+                return "2016-06-06 00:00:00";
+            default:
+                return "2015-06-14 00:00:00";
+        }
 
     }
 

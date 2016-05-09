@@ -1,12 +1,13 @@
-package st; /**
+package ri; /**
  * Created by Ioana on 4/20/2016.
  */
 
 import com.opencsv.CSVReader;
 
-import java.io.*;
-import java.text.ParseException;
-import java.util.DoubleSummaryStatistics;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.Writer;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -21,14 +22,14 @@ public class ScriptGeneration {
             scaledNextWeek = new String[6];
 
     public static void generateScripts(int week) throws IOException {
-        readMetrics("data\\st\\2016\\week" + week + "\\metrics\\ST2015_metrics.csv");
-        readScaledMetrics("data\\st\\2016\\week" + week + "\\metrics\\scaled_ST2015_metrics.csv");
-        readAnonIds("data\\st\\2016\\ST2016_anon.csv");
+        readMetrics("data\\ri\\2016\\week" + week + "\\metrics\\RI2016_metrics.csv");
+        readScaledMetrics("data\\ri\\2016\\week" + week + "\\metrics\\scaled_RI2016_metrics.csv");
+        readAnonIds("data\\ri\\2016\\RI2016_anon.csv");
 
         readThresholds(week);
 
-        //writeScripts("data\\st\\2016\\week" + week + "\\scripts\\", week);
-        writeSimpleScripts("data\\st\\2016\\week" + week + "\\scripts\\", week);
+        //writeScripts("data\\ri\\2016\\week" + week + "\\scripts\\", week);
+        writeSimpleScripts("data\\ri\\2016\\week" + week + "\\scripts\\", week);
     }
 
     public static void readMetrics(String filename) throws IOException {
@@ -48,6 +49,7 @@ public class ScriptGeneration {
             users.put(id, current);
         }
 
+        System.out.println("Users: " + users.size());
         csvReader.close();
 
     }
@@ -175,6 +177,10 @@ public class ScriptGeneration {
 
     public static void writeSimpleScripts(String destinationFolder, int week) throws IOException {
 
+        //UserS me = users.get("8206618");
+
+        //writeUserScript(destinationFolder, me.id, getChartOptions(me.values, me.scaledValues, me.id, week));
+
         for (Map.Entry<String, UserS> entry : users.entrySet()) {
             UserS current = entry.getValue();
             writeUserScript(destinationFolder, current.anonId, getSimpleChartOptions(current.values, current.scaledValues, current.id, week));
@@ -215,8 +221,8 @@ public class ScriptGeneration {
 
     private static String getChartOptions(String[] values, String[] scaledValues, String userId, int week) {
         String[] metricNames = ("Sessions per week#Average length of a session#Average time between sessions#" +
-                "Forum sessions#Weekly assessment answers submitted#Timeliness of weekly assessment submission").split("#");
-        String[] metricUnits = "#min#h###h".split("#");
+                "Time on task#Weekly assessment answers submitted#Timeliness of weekly assessment submission").split("#");
+        String[] metricUnits = "#min#h#%##h".split("#");
         String[] thresh, scaledThresh, nextW, scaledNextW;
 
 
@@ -433,8 +439,8 @@ public class ScriptGeneration {
 
     private static String getSimpleChartOptions(String[] values, String[] scaledValues, String userId, int week) {
         String[] metricNames = ("Sessions per week#Average length of a session#Average time between sessions#" +
-                "Forum sessions#Weekly assessment answers submitted#Timeliness of weekly assessment submission").split("#");
-        String[] metricUnits = "#min#h###h".split("#");
+                "Time on task#Weekly assessment answers submitted#Timeliness of weekly assessment submission").split("#");
+        String[] metricUnits = "#min#h#%##h".split("#");
         String[] thresh, scaledThresh, nextW, scaledNextW;
 
 
@@ -450,7 +456,8 @@ public class ScriptGeneration {
         nextW = randomizeOrder(nextWeek, Integer.parseInt(userId));
         scaledNextW = randomizeOrder(scaledNextWeek, Integer.parseInt(userId));
 
-        String options = "function timeStamp() {\n" +
+        String options =
+                "function timeStamp() {\n" +
                 "  var now = new Date();\n" +
                 "  var date = [ now.getFullYear(), now.getMonth() + 1, now.getDate() ];\n" +
                 "  var time = [ now.getHours(), now.getMinutes(), now.getSeconds() ];\n" +
@@ -489,7 +496,7 @@ public class ScriptGeneration {
                 "\t\t\tevents: {\n" +
                 "\t\t\t\tload: function () {\n" +
                 "\t\t\t\t\tvar category = user_id + '_week" + week + "';\n" +
-                "\t\t\t\t\tgaST('send', 'event', category, 'load_' + timeStamp());\n" +
+                "\t\t\t\t\tgaRI('send', 'event', category, 'load_' + timeStamp());\n" +
                 "\t\t\t\t}\n" +
                 "\t\t\t}\n" +
                 "                 \n" +
@@ -581,10 +588,10 @@ public class ScriptGeneration {
                 "\t\t\tvisible: false,\n" +
                 "\t\t\tevents: {\n" +
                 "                    show: function () {\n" +
-                "\t\t\t\t\t\tgaST('send', 'event', user_id + '_week" + week + "', 'show-this-week_' + timeStamp());\n" +
+                "\t\t\t\t\t\tgaRI('send', 'event', user_id + '_week" + week + "', 'show-this-week_' + timeStamp());\n" +
                 "                    },\n" +
                 "\t\t\t\t\thide: function () {\n" +
-                "\t\t\t\t\t\tgaST('send', 'event', user_id + '_week" + week + "', 'hide-this-week_' + timeStamp());\n" +
+                "\t\t\t\t\t\tgaRI('send', 'event', user_id + '_week" + week + "', 'hide-this-week_' + timeStamp());\n" +
                 "                    }\n" +
                 "                }\n" +
                 "        },\n" +
@@ -597,10 +604,10 @@ public class ScriptGeneration {
                 "            borderColor: '#000000',\n" +
                 "\t\t\tevents: {\n" +
                 "                    show: function () {\n" +
-                "\t\t\t\t\t\tgaST('send', 'event', user_id + '_week" + week + "', 'show-last-week_' + timeStamp());\n" +
+                "\t\t\t\t\t\tgaRI('send', 'event', user_id + '_week" + week + "', 'show-last-week_' + timeStamp());\n" +
                 "                    },\n" +
                 "\t\t\t\t\thide: function () {\n" +
-                "\t\t\t\t\t\tgaST('send', 'event', user_id + '_week" + week + "', 'hide-last-week_' + timeStamp());\n" +
+                "\t\t\t\t\t\tgaRI('send', 'event', user_id + '_week" + week + "', 'hide-last-week_' + timeStamp());\n" +
                 "                    }\n" +
                 "                }\t\t\t\t\n" +
                 "      \n" +
@@ -612,10 +619,10 @@ public class ScriptGeneration {
                 "            data: " + getString(scaledValues) + ",\n" +
                 "\t\t\tevents: {\n" +
                 "                    show: function () {\n" +
-                "\t\t\t\t\t\tgaST('send', 'event', user_id + '_week" + week + "', 'show-you_' + timeStamp());\n" +
+                "\t\t\t\t\t\tgaRI('send', 'event', user_id + '_week" + week + "', 'show-you_' + timeStamp());\n" +
                 "                    },\n" +
                 "\t\t\t\t\thide: function () {\n" +
-                "\t\t\t\t\t\tgaST('send', 'event', user_id + '_week" + week + "', 'hide-you_' + timeStamp());\n" +
+                "\t\t\t\t\t\tgaRI('send', 'event', user_id + '_week" + week + "', 'hide-you_' + timeStamp());\n" +
                 "                    }\n" +
                 "                }\n" +
                 "        }\n" +

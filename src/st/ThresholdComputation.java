@@ -87,7 +87,8 @@ public class ThresholdComputation {
                 weeklyBetweenSessions.get(week).add(betweenSessions);
             weeklyForumSessions.get(week).add(forumSessions);
             weeklyAssignments.get(week).add(assignments);
-            weeklyUntilDeadline.get(week).add(timeliness);
+            if(timeliness > -1)
+                weeklyUntilDeadline.get(week).add(timeliness);
 
         }
 

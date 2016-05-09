@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Created by Ioana on 4/7/2016.
@@ -19,24 +18,39 @@ public class MetricComputation {
     static HashMap<String, UserMetricComputation> users = new HashMap<>();
     static HashMap<String, Integer> problems = new HashMap<>();
 
-    public static void computeMetrics2014(int week) throws IOException, ParseException {
+    public static void readData2014() throws IOException, ParseException {
         readUsers(users, "data\\ri\\2014\\RI2014_graduates.csv");
-        readSessions("data\\ri\\2014\\sessions.csv");
+        //readSessions("data\\ri\\2014\\sessions.csv");
+        readNewSessions("data\\ri\\2014\\new_sessions.csv");
 
-        //readForumSessions("data\\ri\\2014\\forum_sessions.csv");
-        //readQuizSessions("data\\ri\\2014\\quiz_sessions.csv");
+        //readForumSessions("data\\ri\\2014\\new_forum_sessions.csv");
+        //readQuizSessions("data\\ri\\2014\\new_quiz_sessions.csv");
         //readObservations("data\\ri\\2014\\observations.csv");
+        readActivitySessions("data\\ri\\2014\\activity_sessions.csv");
 
         readProblems("data\\ri\\2014\\problems.csv");
         readSubmissions("data\\ri\\2014\\submissions.csv");
+    }
 
-        //writeSessions(week, "data\\ri\\2014\\output\\" + week + "_#sessions.csv");
-        //writeAverageTimePerSession(week, "data\\ri\\2014\\output\\" + week + "_averageSessionTime.csv");
-        //writeAverageSessionsPerWeek(week, "data\\ri\\2014\\output\\" + week + "_averageSessionsPerWeek.csv");
-        //writeAverageLengthBetweenSessions(week, "data\\ri\\2014\\output\\" + week + "_averageLengthBetweenSessions.csv");
+    public static void computeMetrics2014(int week) throws IOException, ParseException {
         writeMetrics(users, week, "data\\ri\\2014\\output\\RI2014_metrics_" + week + ".csv");
     }
 
+    public static void computeMetrics(int week) throws IOException, ParseException {
+        readUsers(users, "data\\ri\\2016\\RI2016_test.csv");
+        //readSessions("data\\ri\\2014\\sessions.csv");
+        readNewSessions("data\\ri\\2016\\week" + week + "\\data\\curated\\new_sessions.csv");
+
+        //readForumSessions("data\\ri\\2014\\new_forum_sessions.csv");
+        //readQuizSessions("data\\ri\\2014\\new_quiz_sessions.csv");
+        //readObservations("data\\ri\\2014\\observations.csv");
+        readActivitySessions("data\\ri\\2016\\week" + week + "\\data\\curated\\activity_sessions.csv");
+
+        readProblems("data\\ri\\2016\\week" + week + "\\data\\problems.csv");
+        readSubmissions("data\\ri\\2016\\week" + week + "\\data\\submissions.csv");
+
+        writeMetrics(users, week, "data\\ri\\2016\\week" + week + "\\metrics\\RI2016_metrics.csv");
+    }
 
     //READ
     //Reads from a file with ids on the first column and creates a Hashmap of UserMetricComputation objects with the id as key
@@ -78,23 +92,46 @@ public class MetricComputation {
         csvReader.close();
     }
 
+    private static void readNewSessions(String filename) throws IOException, ParseException {
+        //user_id, start_time, end_time, duration
+        CSVReader csvReader = new CSVReader(new FileReader(filename));
+        String[] nextLine;
+        int duration, week;
+
+        while ((nextLine = csvReader.readNext()) != null) {
+
+            if(users.containsKey(nextLine[0])) {
+                duration = Integer.parseInt(nextLine[3]);
+                //week = RI_getWeek2014(nextLine[1]);
+                week = RI_getWeek(nextLine[1]);
+
+                if(week == 99)
+                    continue;
+
+                users.get(nextLine[0]).addSession(week, duration, nextLine[1], nextLine[2]);
+
+            }
+        }
+
+        csvReader.close();
+    }
+
     private static void readForumSessions(String filename) throws IOException, ParseException {
-        //session_id, course_user_id, ??, start_time, end_time, duration
+        //user_id, start_time, end_time, duration
         CSVReader csvReader = new CSVReader(new FileReader(filename));
         String[] nextLine, session_attr;
         int duration, week;
 
         while ((nextLine = csvReader.readNext()) != null) {
-            session_attr = nextLine[0].split("_");
 
-            if(users.containsKey(session_attr[3])) {
-                duration = Integer.parseInt(nextLine[5]);
-                week = RI_getWeek2014(nextLine[3]);
+            if(users.containsKey(nextLine[0])) {
+                duration = Integer.parseInt(nextLine[3]);
+                week = RI_getWeek2014(nextLine[1]);
 
                 if(week == 99)
                     continue;
 
-                users.get(session_attr[3]).addForumSession(week, duration, session_attr[4], session_attr[5]);
+                users.get(nextLine[0]).addForumSession(week, duration, nextLine[1], nextLine[2]);
 
             }
         }
@@ -103,22 +140,21 @@ public class MetricComputation {
     }
 
     private static void readQuizSessions(String filename) throws IOException, ParseException {
-        //session_id, course_user_id, start_time, end_time, duration
+        //user_id, start_time, end_time, duration
         CSVReader csvReader = new CSVReader(new FileReader(filename));
         String[] nextLine, session_attr;
         int duration, week;
 
         while ((nextLine = csvReader.readNext()) != null) {
-            session_attr = nextLine[0].split("_");
 
-            if(users.containsKey(session_attr[4])) {
-                duration = Integer.parseInt(nextLine[4]);
-                week = RI_getWeek2014(nextLine[2]);
+            if(users.containsKey(nextLine[0])) {
+                duration = Integer.parseInt(nextLine[3]);
+                week = RI_getWeek2014(nextLine[1]);
 
                 if(week == 99)
                     continue;
 
-                users.get(session_attr[4]).addQuizSession(week, duration, session_attr[5], session_attr[6]);
+                users.get(nextLine[0]).addQuizSession(week, duration, nextLine[1], nextLine[2]);
 
             }
         }
@@ -134,16 +170,38 @@ public class MetricComputation {
         int duration, week;
 
         while ((nextLine = csvReader.readNext()) != null) {
-            session_attr = nextLine[0].split("_");
 
-            if(users.containsKey(session_attr[1])) {
+            if(users.containsKey(nextLine[0])) {
                 duration = Integer.parseInt(nextLine[3]);
-                week = RI_getWeek2014(nextLine[4]);
+                week = RI_getWeek2014(nextLine[1]);
 
                 if(week == 99)
                     continue;
 
-                users.get(session_attr[1]).addVideoSession(week, duration, session_attr[3]);
+                users.get(nextLine[0]).addVideoSession(week, duration, nextLine[1]);
+
+            }
+        }
+
+        csvReader.close();
+    }
+
+    private static void readActivitySessions(String filename) throws IOException, ParseException {
+        CSVReader csvReader = new CSVReader(new FileReader(filename));
+        String[] nextLine;
+        int duration, week;
+
+        while ((nextLine = csvReader.readNext()) != null) {
+
+            if(users.containsKey(nextLine[0])) {
+                duration = Integer.parseInt(nextLine[3]);
+                //week = RI_getWeek2014(nextLine[1]);
+                week = RI_getWeek(nextLine[1]);
+
+                if(week == 99)
+                    continue;
+
+                users.get(nextLine[0]).addActivitySession(week, duration);
 
             }
         }
@@ -155,10 +213,12 @@ public class MetricComputation {
         CSVReader csvReader = new CSVReader(new FileReader(filename));
         String [] nextLine;
         int week;
+        String problemId;
 
         while ((nextLine = csvReader.readNext()) != null) {
-            week = Integer.parseInt(nextLine[2] + 1);
-            problems.put(nextLine[0], week);
+            week = Integer.parseInt(nextLine[2]) + 1;
+            problemId = nextLine[0].substring(nextLine[0].indexOf("block@") + 6);
+            problems.put(problemId, week);
         }
 
         csvReader.close();
@@ -189,12 +249,17 @@ public class MetricComputation {
             //todo: check the submission time format
             submissionTime = nextLine[5].substring(0, 19);
 
-            week = RI_getWeek2014(nextLine[5]);
-            if(week > 11)
+            System.out.println(submissionTime);
+
+            //week = RI_getWeek2014(nextLine[5]);
+            week = RI_getWeek(nextLine[5]);
+
+            if(week > 9)
                 continue;
 
             //String problemId, int submissionWeek, Date submissionTime, Date problemDeadline
-            user.addSubmission(nextLine[4], week, submissionTime, getProblemDeadlineForProblem2014(problems.get(nextLine[4])));
+            //user.addSubmission(nextLine[4], week, submissionTime, getProblemDeadline2014(problems.get(nextLine[4])));
+            user.addSubmission(nextLine[4], week, submissionTime, getProblemDeadline(problems.get(nextLine[4])));
 
             sub++;
         }
@@ -263,23 +328,23 @@ public class MetricComputation {
         if(startTime.compareTo("2014-12-16") > 0 && startTime.compareTo("2014-12-23") < 0)
             return 4;
         if(startTime.compareTo("2014-12-23") > 0 && startTime.compareTo("2014-12-30") < 0)
-            return 5;
+            return 4;
         if(startTime.compareTo("2014-12-30") > 0 && startTime.compareTo("2015-01-06") < 0)
-            return 6;
+            return 4;
         if(startTime.compareTo("2015-01-06") > 0 && startTime.compareTo("2015-01-13") < 0)
-            return 7;
+            return 5;
         if(startTime.compareTo("2015-01-13") > 0 && startTime.compareTo("2015-01-20") < 0)
-            return 8;
+            return 6;
         if(startTime.compareTo("2015-01-20") > 0 && startTime.compareTo("2015-01-27") < 0)
-            return 9;
+            return 7;
         if(startTime.compareTo("2015-01-27") > 0 && startTime.compareTo("2015-02-03") < 0)
-            return 10;
+            return 8;
         if(startTime.compareTo("2015-02-03") > 0 && startTime.compareTo("2015-02-14") < 0)
-            return 11;
+            return 9;
         return 99;
     }
 
-    private static String getProblemDeadlineForProblem2014(int problemWeek) throws ParseException{
+    private static String getProblemDeadline2014(int problemWeek) throws ParseException{
         String deadline;
 
         switch (problemWeek) {
@@ -296,16 +361,43 @@ public class MetricComputation {
                 deadline = "2014-12-23";
                 break;
             case 5:
-                deadline = "2015-01-14";
+                deadline = "2015-01-13";
                 break;
             case 6:
-                deadline = "2015-01-21";
+                deadline = "2015-01-20";
                 break;
             default:
-                deadline = "2015-01-28";
+                deadline = "2015-01-27";
         }
 
-        return deadline + " 00:00:00";
+        return deadline + " 12:00:00";
+    }
+
+    private static String getProblemDeadline(int problemWeek) throws ParseException{
+        String deadline;
+
+        switch (problemWeek) {
+            case 1:
+                deadline = "2016-04-18"; break;
+            case 2:
+                deadline = "2016-04-25"; break;
+            case 3:
+                deadline = "2016-05-02"; break;
+            case 4:
+                deadline = "2016-05-09"; break;
+            case 5:
+                deadline = "2016-05-16"; break;
+            case 6:
+                deadline = "2016-05-23"; break;
+            case 7:
+                deadline = "2016-05-30"; break;
+            case 8:
+                deadline = "2016-06-06"; break;
+            default:
+                deadline = "2015-06-14";
+        }
+
+        return deadline + " 12:00:00";
     }
 
     private static Date getDateFromString(String dateString) throws ParseException {
@@ -319,82 +411,4 @@ public class MetricComputation {
         }
     }
 
-
-
-
-    //OTHERS = each metrics written individually
-    private static void writeSessions(int endWeek, String filename) throws IOException {
-        CSVWriter output = new CSVWriter(new FileWriter(filename), ',');
-        String[] toWrite;
-        String toWriteString;
-        UserMetricComputation current;
-
-        toWriteString = "User";
-        for(int i = 1; i <= endWeek; i++)
-            toWriteString += "#Week " + i;
-        toWrite = toWriteString.split("#");
-
-        output.writeNext(toWrite);
-
-        for (Map.Entry<String, UserMetricComputation> entry : users.entrySet()) {
-            current = entry.getValue();
-            toWrite[0] = entry.getKey();
-
-            for(int i = 1; i <= endWeek; i++)
-                toWrite[i] = String.valueOf(current.getSessions(i));
-
-            output.writeNext(toWrite);
-        }
-        output.close();
-    }
-
-    private static void writeAverageTimePerSession(int endWeek, String filename) throws IOException {
-        CSVWriter output = new CSVWriter(new FileWriter(filename), ',');
-        String[] toWrite;
-        String toWriteString;
-        UserMetricComputation current;
-
-        toWriteString = "User";
-        for(int i = 1; i <= endWeek; i++)
-            toWriteString += "#Week " + i;
-        toWrite = toWriteString.split("#");
-
-        output.writeNext(toWrite);
-
-        for (Map.Entry<String, UserMetricComputation> entry : users.entrySet()) {
-            current = entry.getValue();
-            toWrite[0] = entry.getKey();
-
-            for(int i = 1; i <= endWeek; i++)
-                toWrite[i] = String.valueOf(current.getAverageSessionLength(i));
-
-            output.writeNext(toWrite);
-        }
-        output.close();
-    }
-
-    private static void writeAverageSessionsPerWeek(int endWeek, String filename) throws IOException {
-        CSVWriter output = new CSVWriter(new FileWriter(filename), ',');
-        String[] toWrite;
-        String toWriteString;
-        UserMetricComputation current;
-
-        toWriteString = "User";
-        for(int i = 1; i <= endWeek; i++)
-            toWriteString += "#Week " + i;
-        toWrite = toWriteString.split("#");
-
-        output.writeNext(toWrite);
-
-        for (Map.Entry<String, UserMetricComputation> entry : users.entrySet()) {
-            current = entry.getValue();
-            toWrite[0] = entry.getKey();
-
-            for(int i = 1; i <= endWeek; i++)
-                toWrite[i] = String.valueOf(current.getSessionsPerWeek(i));
-
-            output.writeNext(toWrite);
-        }
-        output.close();
-    }
 }

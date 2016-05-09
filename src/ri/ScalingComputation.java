@@ -1,4 +1,4 @@
-package st; /**
+package ri; /**
  * Created by Ioana on 1/9/2016.
  */
 
@@ -9,9 +9,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.ParseException;
-import java.util.Comparator;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 //TODO: check file paths for file read and generation so they don't overwrite stuff
@@ -42,11 +40,11 @@ public class ScalingComputation {
     public static void scalingMetrics(int week) throws IOException {
         initialize();
 
-        readMetrics("data\\st\\2016\\week" + week + "\\metrics\\ST2015_metrics.csv");
-        readMaximums(week, "data\\st\\thresholds\\maximum5.csv");
+        readMetrics("data\\ri\\2016\\week" + week + "\\metrics\\RI2016_metrics.csv");
+        readMaximums(week, "data\\ri\\thresholds\\maximum5.csv");
         //getMaximums();
 
-        writeScaledMetrics("data\\st\\2016\\week" + week + "\\metrics\\scaled_ST2015_metrics.csv");
+        writeScaledMetrics("data\\ri\\2016\\week" + week + "\\metrics\\scaled_RI2016_metrics.csv");
     }
 
     //************************
@@ -67,7 +65,7 @@ public class ScalingComputation {
             current.sessionsPerWeek = Integer.parseInt(nextLine[1]);
             current.lengthOfSession = Integer.parseInt(nextLine[2]);
             current.betweenSessions = Integer.parseInt(nextLine[3]);
-            current.forumSessions = Integer.parseInt(nextLine[4]);
+            current.timeOnTask = Integer.parseInt(nextLine[4]);
             current.assignments = Integer.parseInt(nextLine[5]);
             current.timeliness = Integer.parseInt(nextLine[6]);
 
@@ -86,9 +84,8 @@ public class ScalingComputation {
 
         csvReader.readNext();
 
-        while ((nextLine = csvReader.readNext()) != null && line < week) {
+        while ((nextLine = csvReader.readNext()) != null && line < week)
             line++;
-        }
 
         for(int i = 0; i < 6; i++)
             maximums[i] = Integer.parseInt(nextLine[i+1]);
@@ -104,7 +101,7 @@ public class ScalingComputation {
         User current;
         double[] scaled = new double[6];
 
-        toWrite = "User_id#Sessions/week#Length of session#Between sessions#Forum sessions#Assignments#Until deadline".split("#");
+        toWrite = "User_id#Sessions/week#Length of session#Between sessions#Time on task#Assignments#Until deadline".split("#");
         output.writeNext(toWrite);
 
         for (Map.Entry<String, User> entry : users.entrySet()) {
@@ -116,9 +113,13 @@ public class ScalingComputation {
                 scaled[2] = 0;
             else
                 scaled[2] = current.betweenSessions * 10.0 / maximums[2];
-            scaled[3] = current.forumSessions * 10.0/ maximums[3];
+            scaled[3] = current.timeOnTask * 10.0/ maximums[3];
             scaled[4] = current.assignments * 10.0 / maximums[4];
-            scaled[5] = current.timeliness * 10.0 / maximums[5];
+
+            if(current.timeliness == -1)
+                scaled[5] = 0;
+            else
+                scaled[5] = current.timeliness * 10.0 / maximums[5];
 
             toWrite[0] = entry.getKey();
 
@@ -140,7 +141,7 @@ public class ScalingComputation {
         maximums[0] = users.values().stream().mapToInt(e -> e.sessionsPerWeek).max().getAsInt();
         maximums[1] = users.values().stream().mapToInt(e -> e.lengthOfSession).max().getAsInt();
         maximums[2] = users.values().stream().mapToInt(e -> e.betweenSessions).max().getAsInt();
-        maximums[3] = users.values().stream().mapToInt(e -> e.forumSessions).max().getAsInt();
+        maximums[3] = users.values().stream().mapToInt(e -> e.timeOnTask).max().getAsInt();
         maximums[4] = users.values().stream().mapToInt(e -> e.assignments).max().getAsInt();
         maximums[5] = users.values().stream().mapToInt(e -> e.timeliness).max().getAsInt();
     }
@@ -153,18 +154,18 @@ class User {
     public int sessionsPerWeek;
     public int lengthOfSession;
     public int betweenSessions;
-    public int forumSessions;
+    public int timeOnTask;
     public int assignments;
     public int timeliness;
 
     public int[] values;
 
-    public User(String id, int sessionsPerWeek, int lengthOfSession, int betweenSessions, int forumSessions, int assignments, int timeliness) {
+    public User(String id, int sessionsPerWeek, int lengthOfSession, int betweenSessions, int timeOnTask, int assignments, int timeliness) {
         this.id = id;
         this.sessionsPerWeek = sessionsPerWeek;
         this.lengthOfSession = lengthOfSession;
         this.betweenSessions = betweenSessions;
-        this.forumSessions = forumSessions;
+        this.timeOnTask = timeOnTask;
         this.assignments = assignments;
         this.timeliness = timeliness;
 

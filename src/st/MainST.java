@@ -17,9 +17,9 @@ public class MainST {
         //ThresholdComputation.computeThresholds();
 
         //Compute metrics for 2016
-        int week = 1;
-        MetricComputation.computeMetrics(week);
-        ScalingComputation.scalingMetrics(week);
+        int week = 2;
+        //MetricComputation.computeMetrics(week);
+        //ScalingComputation.scalingMetrics(week);
 
         ScriptGeneration.generateScripts(week);
 

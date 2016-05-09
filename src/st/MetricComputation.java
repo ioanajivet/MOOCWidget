@@ -115,11 +115,13 @@ public class MetricComputation {
         CSVReader csvReader = new CSVReader(new FileReader(filename));
         String [] nextLine;
         int week;
+        String problemId;
 
         while ((nextLine = csvReader.readNext()) != null) {
             if(nextLine[1].startsWith("Weekly assessment")) {
                 week = Integer.parseInt(nextLine[2]) + 1;
-                problems.put(nextLine[0], week);
+                problemId = nextLine[0].substring(nextLine[0].indexOf("block@") + 6);
+                problems.put(problemId, week);
             }
         }
 
@@ -144,6 +146,7 @@ public class MetricComputation {
             user = users.get(user_id[1]);
             if (user == null)    //user are not in the test base -> ignore submission
                 continue;
+
 
             if(!problems.containsKey(nextLine[4]))   //ignore problems that are not graded
                 continue;
