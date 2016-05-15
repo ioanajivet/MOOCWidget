@@ -107,7 +107,7 @@ public class GraphGeneration {
 
         for (int i=1; i<6; i++)
             threshold += line[i] + ",";
-        threshold += line[5] + "]";
+        threshold += line[6] + "]";
 
         return threshold;
     }

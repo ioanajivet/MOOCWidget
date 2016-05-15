@@ -22,10 +22,10 @@ public class MainRI {
         //ThresholdComputation.computeThresholds(maxWeek);
 
         //Compute metrics for 2016
-        int week = 3;
-        //DataCuration.cleanData(week);
-        //MetricComputation.computeMetrics(week);
-        //ScalingComputation.scalingMetrics(week);
+        int week = 4;
+        DataCuration.cleanData(week);
+        MetricComputation.computeMetrics(week);
+        ScalingComputation.scalingMetrics(week);
 
         ScriptGeneration.generateScripts(week);
     }
