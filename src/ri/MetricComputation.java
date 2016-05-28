@@ -252,8 +252,6 @@ public class MetricComputation {
             //todo: check the submission time format
             submissionTime = nextLine[5].substring(0, 19);
 
-            System.out.println(submissionTime);
-
             //week = RI_getWeek2014(nextLine[5]);
             week = RI_getWeek(nextLine[5]);
 

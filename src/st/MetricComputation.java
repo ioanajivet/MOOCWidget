@@ -142,6 +142,9 @@ public class MetricComputation {
         int sub = 0;
 
         while ((nextLine = csvReader.readNext()) != null) {
+            if(nextLine[0].compareTo("") == 0)
+                continue;
+
             if(nextLine[3].compareTo("problem_graded") != 0)
                 continue;
 

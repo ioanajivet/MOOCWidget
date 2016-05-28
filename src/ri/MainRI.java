@@ -14,7 +14,7 @@ public class MainRI {
     public static void main(String[] args) throws IOException, ParseException {
 
         //Clean quiz, forum and video session
-        DataCuration.cleanData2014();
+        //DataCuration.cleanData2014();
 
 
         //Compute thresholds for 2015
@@ -26,7 +26,7 @@ public class MainRI {
 
         //Compute metrics for 2016
         int week = 6;
-        //DataCuration.cleanData(week);
+        DataCuration.cleanData(week);
         MetricComputation.computeMetrics(week);
         //ScalingComputation.scalingMetrics(week);
 

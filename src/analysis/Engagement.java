@@ -18,10 +18,14 @@ public class Engagement {
     private static List<String> testUsers;
     private static List<String> controlUsers;
 
-    private static HashMap<String, String> lastLoginDate;
-    private static HashMap<String, Integer> learningActivities;
 
-    private static int maximum;
+    private static HashMap<String, String> lastLoginDate;   //user, date
+    private static HashMap<String, Integer> learningActivities; //user, #learning activities
+
+    private static HashMap<String, List<Integer>> loggedUsers;   //user, list of weeks in which she logged in
+    private static HashMap<String, List<Integer>> loggedVideoUsers;   //user, list of weeks in which she watched a video
+    private static HashMap<String, List<Integer>> loggedQuizUsers;   //user, list of weeks in which she submitted a quiz
+    private static HashMap<String, List<Integer>> loggedForumUsers;   //user, list of weeks in which she visited the forum
 
     public static void analysis(String course, int weeks) throws IOException {
 
@@ -31,116 +35,227 @@ public class Engagement {
         testUsers = readUsers("data\\analysis\\" + course + "\\1. activity\\" + course.toUpperCase() + "_test_active.csv");
         controlUsers = readUsers("data\\analysis\\" + course + "\\1. activity\\" + course.toUpperCase() + "_control_active.csv");
 
-        /*//A. activity persistence
+        //A. activity persistence
+        //activityPersistence(course, weeks);
+
+        //B. Course engagement over time
+        // TODO: 5/28/2016
+        readLoggedSessions(course, "data\\" + course + "\\2016\\week" + weeks + "\\data\\sessions.csv");
+        readLoggedVideoSessions(course, "data\\" + course + "\\2016\\week" + weeks + "\\data\\observations.csv");
+        readLoggedQuizSessions(course, "data\\" + course + "\\2016\\week" + weeks + "\\data\\submissions.csv");
+        readLoggedForumSessions(course, "data\\" + course + "\\2016\\week" + weeks + "\\data\\forum_sessions.csv");
+
+        writeActivity(weeks, "data\\analysis\\" + course + "\\5. engagement\\" + course.toUpperCase() + "_activity.csv");
+
+
+        //C. course persistence
+        //coursePersistence(course, weeks);
+
+        //D. Number of learners that submit assignments per week
+        //quizSubmitterCount(course, weeks);
+
+        }
+
+    private static void writeActivity(int weeks, String filename) throws IOException {
+        CSVWriter output = new CSVWriter(new FileWriter(filename), ',');
+        String[] toWrite;
+
+        toWrite = "Week#T - logged in#C - logged in#T - watched a video#C - watched a video#T - submitted a quiz#C - submitted a quiz#T - visited forum#C - visited forum".split("#");
+        output.writeNext(toWrite);
+
+        for (int i = 1; i <= weeks; i++) {
+            toWrite[0] = String.valueOf(i);
+            toWrite[1] = String.valueOf(filterPerWeek(loggedUsers, i, 0));
+            toWrite[2] = String.valueOf(filterPerWeek(loggedUsers, i, 1));
+            toWrite[3] = String.valueOf(filterPerWeek(loggedVideoUsers, i, 0));
+            toWrite[4] = String.valueOf(filterPerWeek(loggedVideoUsers, i, 1));
+            toWrite[5] = String.valueOf(filterPerWeek(loggedQuizUsers, i, 0));
+            toWrite[6] = String.valueOf(filterPerWeek(loggedQuizUsers, i, 1));
+            toWrite[7] = String.valueOf(filterPerWeek(loggedForumUsers, i, 0));
+            toWrite[8] = String.valueOf(filterPerWeek(loggedForumUsers, i, 1));
+
+            output.writeNext(toWrite);
+        }
+
+        output.close();
+    }
+
+    private static long filterPerWeek(HashMap<String, List<Integer>> loggedUsers, int week, int parity) {
+        return loggedUsers.entrySet().stream()
+                .filter(e -> Integer.parseInt(e.getKey()) % 2 == parity)
+                .map(e -> e.getValue())
+                .filter(e -> e.contains(week))
+                .count();
+
+    }
+
+    private static void readLoggedSessions(String course, String filename) throws IOException {
+        CSVReader csvReader = new CSVReader(new FileReader(filename));
+        String [] nextLine;
+        String user;
+        int week;
+
+        loggedUsers.clear();
+
+        while ((nextLine = csvReader.readNext()) != null) {
+            user = nextLine[0].split("_")[2];
+            week = Utils.getWeek(course, nextLine[0].split("_")[3]);
+            if(!testUsers.contains(user) && !controlUsers.contains(user))
+                continue;
+
+            if(loggedUsers.containsKey(user)) {
+                if (loggedUsers.get(user).contains(week))
+                    continue;
+                loggedUsers.get(user).add(week);
+            }
+            else {
+                List<Integer> weeks = new ArrayList<>();
+                weeks.add(week);
+                loggedUsers.put(user, weeks);
+            }
+
+        }
+
+        csvReader.close();
+
+    }
+
+    private static void readLoggedVideoSessions(String course, String filename) throws IOException {
+        CSVReader csvReader = new CSVReader(new FileReader(filename));
+        String [] nextLine;
+        String user;
+        int week;
+
+        loggedVideoUsers.clear();
+
+        while ((nextLine = csvReader.readNext()) != null) {
+            user = nextLine[0].split("_")[1];
+            week = Utils.getWeek(course, nextLine[0].split("_")[3]);
+            if(!testUsers.contains(user) && !controlUsers.contains(user))
+                continue;
+
+            if(loggedVideoUsers.containsKey(user)) {
+                if (loggedVideoUsers.get(user).contains(week))
+                    continue;
+                loggedVideoUsers.get(user).add(week);
+            }
+            else {
+                List<Integer> weeks = new ArrayList<>();
+                weeks.add(week);
+                loggedVideoUsers.put(user, weeks);
+            }
+
+        }
+
+        csvReader.close();
+
+    }
+
+    private static void readLoggedQuizSessions(String course, String filename) throws IOException {
+        CSVReader csvReader = new CSVReader(new FileReader(filename));
+        String [] nextLine;
+        String user;
+        int week;
+
+        loggedQuizUsers.clear();
+
+        while ((nextLine = csvReader.readNext()) != null) {
+            user = nextLine[0].split("_")[1];
+            week = Utils.getWeek(course, nextLine[5]);
+            if(!testUsers.contains(user) && !controlUsers.contains(user))
+                continue;
+
+            if(loggedQuizUsers.containsKey(user)) {
+                if (loggedQuizUsers.get(user).contains(week))
+                    continue;
+                loggedQuizUsers.get(user).add(week);
+            }
+            else {
+                List<Integer> weeks = new ArrayList<>();
+                weeks.add(week);
+                loggedQuizUsers.put(user, weeks);
+            }
+
+        }
+
+        csvReader.close();
+
+    }
+
+    private static void readLoggedForumSessions(String course, String filename) throws IOException {
+        CSVReader csvReader = new CSVReader(new FileReader(filename));
+        String [] nextLine;
+        String user;
+        int week;
+
+        loggedForumUsers.clear();
+
+        while ((nextLine = csvReader.readNext()) != null) {
+            user = nextLine[0].split("_")[3];
+            week = Utils.getWeek(course, nextLine[0].split("_")[4]);
+            if(!testUsers.contains(user) && !controlUsers.contains(user))
+                continue;
+
+            if(loggedForumUsers.containsKey(user)) {
+                if (loggedForumUsers.get(user).contains(week))
+                    continue;
+                loggedForumUsers.get(user).add(week);
+            }
+            else {
+                List<Integer> weeks = new ArrayList<>();
+                weeks.add(week);
+                loggedForumUsers.put(user, weeks);
+            }
+
+        }
+
+        csvReader.close();
+
+    }
+
+    private static void activityPersistence(String course, int weeks) throws IOException {
         // 1. last login date
         lastLogin("data\\" + course + "\\2016\\week" + weeks + "\\data\\sessions.csv");
 
         writeLastLogin("data\\analysis\\" + course + "\\5. engagement\\" + course.toUpperCase() + "_last_login.csv");
         writeLastLoginCount("data\\analysis\\" + course + "\\5. engagement\\" + course.toUpperCase() + "_last_login_count.csv");
         writeLastLoginCountWeek(course, weeks, "data\\analysis\\" + course + "\\5. engagement\\" + course.toUpperCase() + "_last_login_count_week.csv");
-*/
+
         // 2. last learning activity session
+        //TODO it might not be relevant
+    }
 
-        //B. Course enagegement over time
+    private static void coursePersistence(String course, int weeks) throws IOException {
+        //Calculates how many of the learners covered 30, 50, 80 % of learning materials
+        int maximum;
 
-        // TODO: 5/28/2016
-
-        /*//C. course persistence
-        //3. submitted 30, 50, 80 % of the weekly quiz assignments - metric #number of assignments
+        //1. Graded quiz questions
         maximum = Utils.getMaximumGradedAssignments(course);
+        learningActivities.clear();
         gradedAssignments("data\\" + course + "\\2016\\week" + weeks + "\\metrics\\" + course.toUpperCase() + "2016_metrics_all.csv");
         writeLearningActivitiesPercentages(maximum, "data\\analysis\\" + course + "\\5. engagement\\" + course.toUpperCase() + "_graded_assignments.csv");
 
-        //4. submitted 30, 50, 80 % of the non-graded quiz assignments
+        //2. Non-graded quiz questions
         maximum = Utils.getMaximumNonGradedAssignments(course);
         learningActivities.clear();
-
         if(maximum > 0) {
             nonGradedAssignments("data\\" + course + "\\2016\\" + course.toUpperCase() + "2016_non-graded.csv",
                     "data\\" + course + "\\2016\\week" + weeks + "\\data\\submissions.csv");
             writeLearningActivitiesPercentages(maximum, "data\\analysis\\" + course + "\\5. engagement\\" + course.toUpperCase() + "_non-graded_assignments.csv");
         }
 
-        //5. accessed 30, 50, 80 % of the video material
+        //3. Video material
         maximum = Utils.getMaximumVideos(course);
         learningActivities.clear();
         videos("data\\" + course + "\\2016\\" + course.toUpperCase() + "2016_videos.csv",
                 "data\\" + course + "\\2016\\week" + weeks + "\\data\\observations.csv");
         writeLearningActivitiesPercentages(maximum, "data\\analysis\\" + course + "\\5. engagement\\" + course.toUpperCase() + "_videos.csv");
-            */
-
-        //D. Number of learners that submit assignments per week
-        //List<String> quizIds = readResources("data\\" + course + "\\2016\\" + course.toUpperCase() + "2016_graded.csv");
-        //quizSubmitters(quizIds, "data\\" + course + "\\2016\\week" + weeks + "\\data\\submissions.csv");
-        testUsers = readUsers("data\\" + course + "\\2016\\" + course.toUpperCase() + "2016_test.csv");
-        controlUsers = readUsers("data\\" + course + "\\2016\\" + course.toUpperCase() + "2016_control.csv");
-
-        quizSubmit(course, weeks, "data\\analysis\\" + course + "\\5. engagement\\" + course.toUpperCase() + "_quizSubmitters.csv");
-
-        }
-
-    private static void quizSubmit(String course, int weeks, String filename) throws IOException {
-        CSVWriter output = new CSVWriter(new FileWriter(filename), ',');
-        String[] toWrite;
-        List<String> uniqueSubmitters = new ArrayList<>();
-
-        toWrite = "Week#Test#Control".split("#");
-        output.writeNext(toWrite);
-
-        for(int i = 1; i <= weeks; i++) {
-            learningActivities.clear();
-            gradedAssignments("data\\" + course + "\\2016\\week" + i + "\\metrics\\" + course.toUpperCase() + "2016_metrics_all.csv");
-
-            //add new unique submitters
-            System.out.println("Unique " + i +": " + learningActivities.entrySet().stream()
-                    .filter(e -> e.getValue() > 0)
-                    .filter(e -> !uniqueSubmitters.contains(e.getKey()))
-                    .map(e -> e.getKey())
-                    .count());
-                    /*.map(e -> {
-                        uniqueSubmitters.add(e);
-                        return e;
-                    });*/
-
-            toWrite[0] = String.valueOf(i);
-            toWrite[1] = String.valueOf(uniqueSubmitters.stream()
-                    .filter(e -> Integer.parseInt(e) % 2 == 0)
-                    .count());
-
-            toWrite[2] = String.valueOf(uniqueSubmitters.stream()
-                    .filter(e -> Integer.parseInt(e) % 2 == 1)
-                    .count());
-
-            output.writeNext(toWrite);
-        }
-
-        output.close();
-
     }
 
-    private static void quizSubmitters(List<String> quizIds, String filename) throws IOException {
-        CSVReader csvReader = new CSVReader(new FileReader(filename));
-        String [] nextLine;
-        int test = 0, control = 0;
-
-        while ((nextLine = csvReader.readNext()) != null) {
-            if(nextLine[3].compareTo("problem_graded") != 0)
-                continue;
-
-            if(!quizIds.contains(nextLine[4]))
-                continue;
-
-            String user = nextLine[0].split("_")[1];
-
-            if(testUsers.contains(user))
-                test++;
-            if(controlUsers.contains(user))
-                control++;
-
-
-        }
-
-        csvReader.close();
+    private static void quizSubmitterCount(String course, int weeks) throws IOException {
+        testUsers = readUsers("data\\" + course + "\\2016\\" + course.toUpperCase() + "2016_test.csv");
+        controlUsers = readUsers("data\\" + course + "\\2016\\" + course.toUpperCase() + "2016_control.csv");
+        quizSubmitters(course, weeks, "data\\analysis\\" + course + "\\5. engagement\\" + course.toUpperCase() + "_quizSubmitters.csv");
     }
 
 
@@ -151,6 +266,11 @@ public class Engagement {
 
         lastLoginDate = new HashMap<>();
         learningActivities = new HashMap<>();
+
+        loggedUsers = new HashMap<>();
+        loggedVideoUsers = new HashMap<>();
+        loggedQuizUsers = new HashMap<>();
+        loggedForumUsers = new HashMap<>();
     }
 
     private static List<String> readUsers(String filename) throws IOException {
@@ -417,6 +537,46 @@ public class Engagement {
                     .distinct()
                     .count());
 
+
+    }
+
+    //D. QUIZ SUBMITTERS
+    private static void quizSubmitters(String course, int weeks, String filename) throws IOException {
+        CSVWriter output = new CSVWriter(new FileWriter(filename), ',');
+        String[] toWrite;
+        List<String> uniqueSubmitters = new ArrayList<>();
+
+        toWrite = "Week#Test#Control".split("#");
+        output.writeNext(toWrite);
+
+        for(int i = 1; i <= weeks; i++) {
+            learningActivities.clear();
+            gradedAssignments("data\\" + course + "\\2016\\week" + i + "\\metrics\\" + course.toUpperCase() + "2016_metrics_all.csv");
+
+            //add new unique submitters
+            learningActivities.entrySet().stream()
+                    .filter(e -> e.getValue() > 0 && !uniqueSubmitters.contains(e.getKey()))
+                    .map(e -> {
+                        uniqueSubmitters.add(e.getKey());
+                        return e;
+                    })
+                    .count();
+
+            System.out.println(uniqueSubmitters.size());
+
+            toWrite[0] = String.valueOf(i);
+            toWrite[1] = String.valueOf(uniqueSubmitters.stream()
+                    .filter(e -> Integer.parseInt(e) % 2 == 0)
+                    .count());
+
+            toWrite[2] = String.valueOf(uniqueSubmitters.stream()
+                    .filter(e -> Integer.parseInt(e) % 2 == 1)
+                    .count());
+
+            output.writeNext(toWrite);
+        }
+
+        output.close();
 
     }
 }
