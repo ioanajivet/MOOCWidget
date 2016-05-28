@@ -33,7 +33,9 @@ public class MetricComputation {
     }
 
     public static void computeMetrics(int week) throws IOException, ParseException {
-        readUsers(users, "data\\st\\2016\\ST2016_test.csv");
+        //readUsers(users, "data\\st\\2016\\ST2016_test.csv");
+        //readUsers(users, "data\\st\\2016\\ST2016_control.csv");
+        readUsers(users, "data\\st\\2016\\ST2016_student_profile.csv");
 
         System.out.println(users.size());
 
@@ -44,7 +46,8 @@ public class MetricComputation {
         readProblems("data\\st\\2016\\week" + week + "\\data\\problems.csv");
         readSubmissions("data\\st\\2016\\week" + week + "\\data\\submissions.csv");
 
-        writeMetrics(users, week, "data\\st\\2016\\week" + week + "\\metrics\\ST2015_metrics.csv");
+        writeMetrics(users, week, "data\\st\\2016\\week" + week + "\\metrics\\ST2016_metrics_all.csv");
+        writeMetricsForWidget(users, week, "data\\st\\2016\\week" + week + "\\metrics\\ST2016_metrics.csv");
     }
 
     //READ
@@ -180,6 +183,35 @@ public class MetricComputation {
         output.writeNext(toWrite);
 
         for (Map.Entry<String, UserMetricComputation> entry : users.entrySet()) {
+            current = entry.getValue();
+            toWrite[0] = entry.getKey();
+            toWrite[1] = String.valueOf(current.getSessionsPerWeek(week));
+            toWrite[2] = String.valueOf(current.getAverageSessionLength(week));
+            toWrite[3] = String.valueOf(current.getAverageTimeBetweenSessions(week));
+            toWrite[4] = String.valueOf(current.getForumSessions(week));
+            toWrite[5] = String.valueOf(current.getQuizSubmissions(week));
+            toWrite[6] = String.valueOf(current.getRecommendedTimeliness(week));
+            toWrite[7] = String.valueOf(current.getSessions(week));
+
+            output.writeNext(toWrite);
+        }
+        output.close();
+    }
+
+    private static void writeMetricsForWidget(HashMap<String, UserMetricComputation> group, int week, String filename) throws IOException {
+        CSVWriter output = new CSVWriter(new FileWriter(filename), ',');
+        String[] toWrite;
+        UserMetricComputation current;
+
+        toWrite = "User_id#Sessions/week#Length of session#Between sessions#Forum sessions#Assignments#Until deadline#Sessions".split("#");
+
+        output.writeNext(toWrite);
+
+        for (Map.Entry<String, UserMetricComputation> entry : users.entrySet()) {
+
+            if(Integer.parseInt(entry.getKey()) % 2 == 1)
+                continue;
+
             current = entry.getValue();
             toWrite[0] = entry.getKey();
             toWrite[1] = String.valueOf(current.getSessionsPerWeek(week));

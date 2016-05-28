@@ -185,7 +185,7 @@ public class UserMetricComputation {
         return submissions;
     }
 
-    //Metric 6. Timeliness according to the recommended deadline - one week after publication of new material
+    //Metric 6. Timeliness according to the recommended deadline - two weeks after publication of new material
     public int getRecommendedTimeliness(int week) {
         HashMap<String, Date> weekSubmissions;
         long totalHours = 0;

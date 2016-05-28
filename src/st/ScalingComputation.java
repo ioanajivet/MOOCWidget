@@ -42,11 +42,11 @@ public class ScalingComputation {
     public static void scalingMetrics(int week) throws IOException {
         initialize();
 
-        readMetrics("data\\st\\2016\\week" + week + "\\metrics\\ST2015_metrics.csv");
+        readMetrics("data\\st\\2016\\week" + week + "\\metrics\\ST2016_metrics.csv");
         readMaximums(week, "data\\st\\thresholds\\maximum5.csv");
         //getMaximums();
 
-        writeScaledMetrics("data\\st\\2016\\week" + week + "\\metrics\\scaled_ST2015_metrics.csv");
+        writeScaledMetrics("data\\st\\2016\\week" + week + "\\metrics\\ST2016_scaled_metrics.csv");
     }
 
     //************************

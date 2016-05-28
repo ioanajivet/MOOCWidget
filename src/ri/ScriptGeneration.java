@@ -23,7 +23,7 @@ public class ScriptGeneration {
 
     public static void generateScripts(int week) throws IOException {
         readMetrics("data\\ri\\2016\\week" + week + "\\metrics\\RI2016_metrics.csv");
-        readScaledMetrics("data\\ri\\2016\\week" + week + "\\metrics\\scaled_RI2016_metrics.csv");
+        readScaledMetrics("data\\ri\\2016\\week" + week + "\\metrics\\RI2016_scaled_metrics.csv");
         readAnonIds("data\\ri\\2016\\RI2016_anon.csv");
 
         readThresholds(week);
@@ -442,6 +442,11 @@ public class ScriptGeneration {
                 "Time on task#Weekly assessment answers submitted#Timeliness of weekly assessment submission").split("#");
         String[] metricUnits = "#min#h#%##h".split("#");
         String[] thresh, scaledThresh, nextW, scaledNextW;
+
+        if(userId.compareTo("5524478") == 0) {
+            System.out.println(metricNames);
+            System.out.println(randomizeOrder(metricNames, Integer.parseInt(userId)));
+        }
 
 
         metricNames = randomizeOrder(metricNames, Integer.parseInt(userId));

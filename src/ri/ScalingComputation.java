@@ -41,10 +41,10 @@ public class ScalingComputation {
         initialize();
 
         readMetrics("data\\ri\\2016\\week" + week + "\\metrics\\RI2016_metrics.csv");
-        readMaximums(week, "data\\ri\\thresholds\\maximum5.csv");
+        readMaximums(week, "data\\st\\thresholds\\maximum5.csv");
         //getMaximums();
 
-        writeScaledMetrics("data\\ri\\2016\\week" + week + "\\metrics\\scaled_RI2016_metrics.csv");
+        writeScaledMetrics("data\\ri\\2016\\week" + week + "\\metrics\\RI2016_scaled_metrics.csv");
     }
 
     //************************

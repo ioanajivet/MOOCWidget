@@ -17,11 +17,11 @@ public class MainST {
         //ThresholdComputation.computeThresholds();
 
         //Compute metrics for 2016
-        int week = 4;
+        int week = 6;
         MetricComputation.computeMetrics(week);
-        ScalingComputation.scalingMetrics(week);
+        //ScalingComputation.scalingMetrics(week);
 
-        ScriptGeneration.generateScripts(week);
+        //ScriptGeneration.generateScripts(week);
 
     }
 }
