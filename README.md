@@ -17,5 +17,6 @@
 6. problems.csv
       - problem_id, published_week
       - in the original data, the published_week is week-1 (don't know why...?)
+      - it should include only the graded assignments/the ones that are to be tracked
 5. resources.csv
       - resource_id, resource_type,	published_week
