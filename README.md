@@ -1,0 +1,3 @@
+# MOOCWidget
+
+== Input file structure ==
