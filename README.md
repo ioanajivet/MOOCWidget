@@ -15,6 +15,7 @@
 5. submissions.csv
       - submission_id,	short_user_id,	problem_id, timestamp
 6. problems.csv
-      - problem_id,	published_week
+      - problem_id, published_week
+      - in the original data, the published_week is week-1 (don't know why...?)
 5. resources.csv
       - resource_id, resource_type,	published_week
