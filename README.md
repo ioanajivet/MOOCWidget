@@ -14,6 +14,7 @@
       - observation_id,	short_user_id,	video_id, start_timestamp, end_timestamp, duration
 5. submissions.csv
       - submission_id,	short_user_id,	problem_id, timestamp
+      - timestamp is in the format: 2015-02-04T13:13:24.658757+00:00
 6. problems.csv
       - problem_id, published_week
       - in the original data, the published_week is week-1 (don't know why...?)
