@@ -10,8 +10,10 @@ LearningTracker -command [params]
       - path - the path to the folder that contains the "data" folder with the csv files
       - cutOffPercent - used for removing the outliers in aggregating the threshold
                        - optional; default is set to 5%
+                   
 + as input in the folder "data"
       - graduates.csv
+
 + as output in the specified path:
       - a folder "metrics" that contains the metrics for all graduates
       - a folder "thresholds" that contains the maximums, the thresholds and the scaled thresholds for all course weeks
